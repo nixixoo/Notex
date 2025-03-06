@@ -1,0 +1,60 @@
+<div class="editor-container">
+    <div class="editor-header">
+      <button class="back-btn" (click)="goBack()">← Back to Notes</button>
+      <div class="editor-actions">
+        <button class="delete-btn" (click)="deleteNote()">Delete</button>
+        <button class="save-btn" [disabled]="noteForm.invalid || isSaving" (click)="saveNote()">
+          {{ isSaving ? 'Saving...' : 'Save' }}
+        </button>
+      </div>
+    </div>
+    
+    <div *ngIf="isLoading" class="loading-container">
+      <div class="loading-spinner"></div>
+      <p>Loading note...</p>
+    </div>
+    
+    <div *ngIf="!isLoading && !note" class="note-not-found">
+      <p>Note not found or you don't have permission to view it.</p>
+      <button class="back-btn" (click)="goBack()">Back to Notes</button>
+    </div>
+    
+    <form *ngIf="!isLoading && note" [formGroup]="noteForm" class="note-form">
+      <div class="form-group title-group">
+        <input 
+          type="text" 
+          formControlName="title" 
+          class="title-input"
+          [class.is-invalid]="title?.invalid && (title?.dirty || title?.touched)"
+          placeholder="Title"
+        >
+        <div *ngIf="title?.invalid && (title?.dirty || title?.touched)" class="error-message">
+          <span *ngIf="title?.errors?.['required']">Title is required</span>
+        </div>
+      </div>
+      
+      <div class="form-group subtitle-group">
+        <input 
+          type="text" 
+          formControlName="subtitle" 
+          class="subtitle-input"
+          [class.is-invalid]="subtitle?.invalid && (subtitle?.dirty || subtitle?.touched)"
+          placeholder="Subtitle"
+        >
+        <div *ngIf="subtitle?.invalid && (subtitle?.dirty || subtitle?.touched)" class="error-message">
+          <span *ngIf="subtitle?.errors?.['required']">Subtitle is required</span>
+        </div>
+      </div>
+      
+      <div class="form-group content-group">
+        <textarea 
+          formControlName="content" 
+          class="content-input"
+          placeholder="Write your note here..."
+          rows="15"
+        ></textarea>
+      </div>
+    </form>
+  </div>
+  
+  
