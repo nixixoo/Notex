@@ -1,3 +1,4 @@
+
 .editor-container {
     padding: 1rem 0;
   }
@@ -12,7 +13,7 @@
   .back-btn {
     background: none;
     border: none;
-    color: #FF9E5E;
+    color: var(--primary-purple);
     font-size: 1rem;
     font-weight: 500;
     cursor: pointer;
@@ -20,7 +21,7 @@
     transition: color 0.3s ease;
   
     &:hover {
-      color: #FF8A3D;
+      color: var(--secondary-purple);
       text-decoration: underline;
     }
   }
@@ -41,11 +42,11 @@
   }
   
   .save-btn {
-    background-color: #FF9E5E;
+    background-color: var(--primary-purple);
     color: white;
   
     &:hover:not(:disabled) {
-      background-color: #FF8A3D;
+      background-color: var(--secondary-purple);
     }
   
     &:disabled {
@@ -55,13 +56,13 @@
   }
   
   .delete-btn {
-    background-color: #f8f9fa;
-    color: #dc3545;
-    border: 1px solid #dc3545;
+    background-color: var(--background-color);
+    color: var(--error-color);
+    border: 1px solid var(--error-color);
   
     &:hover {
-      background-color: #dc3545;
-      color: white;
+      background-color: var(--error-color);
+      color: var(--background-color);
     }
   }
   
@@ -74,9 +75,9 @@
   }
   
   .loading-spinner {
-    border: 4px solid rgba(255, 158, 94, 0.3);
+    border: 4px solid var(--text-color-light);
     border-radius: 50%;
-    border-top: 4px solid #FF9E5E;
+    border-top: 4px solid var(--primary-purple);
     width: 40px;
     height: 40px;
     animation: spin 1s linear infinite;
@@ -91,7 +92,7 @@
   .note-not-found {
     text-align: center;
     padding: 3rem 0;
-    color: #666;
+    color: var(--text-color-light);
   }
   
   .note-form {
@@ -108,7 +109,7 @@
   
   .title-input, .subtitle-input, .content-input {
     padding: 0.75rem 1rem;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-color);
     border-radius: 4px;
     font-size: 1rem;
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
@@ -116,7 +117,7 @@
   
     &:focus {
       outline: none;
-      border-color: #FF9E5E;
+      border-color: var(--secondary-purple);
       box-shadow: 0 0 0 2px rgba(255, 158, 94, 0.2);
     }
   }
@@ -128,7 +129,7 @@
   
   .subtitle-input {
     font-size: 1.1rem;
-    color: #555;
+    color: var(--text-color-light);
   }
   
   .content-input {
@@ -139,11 +140,11 @@
   }
   
   .is-invalid {
-    border-color: #dc3545;
+    border-color: var(--error-color);
   }
   
   .error-message {
-    color: #dc3545;
+    color: var(--error-color);
     font-size: 0.875rem;
     margin-top: 0.25rem;
   }

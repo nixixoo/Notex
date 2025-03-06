@@ -7,7 +7,7 @@
   }
   
   .auth-card {
-    background-color: white;
+    background-color: var(--background-color);
     border-radius: 8px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
     padding: 2.5rem;
@@ -16,7 +16,7 @@
   }
   
   .auth-title {
-    color: #333;
+    color: var(--text-color);
     font-size: 2rem;
     font-weight: 700;
     margin-bottom: 0.5rem;
@@ -24,7 +24,7 @@
   }
   
   .auth-subtitle {
-    color: #666;
+    color: var(--text-color-light);
     text-align: center;
     margin-bottom: 2rem;
   }
@@ -43,35 +43,35 @@
   
   label {
     font-weight: 500;
-    color: #555;
+    color: var(--text-color-light);
   }
   
   .form-control {
     padding: 0.75rem 1rem;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-color);
     border-radius: 4px;
     font-size: 1rem;
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
   
     &:focus {
       outline: none;
-      border-color: #FF9E5E;
+      border-color: var(--primary-purple);
       box-shadow: 0 0 0 2px rgba(255, 158, 94, 0.2);
     }
   
     &.is-invalid {
-      border-color: #dc3545;
+      border-color: var(--error-color);
     }
   }
   
   .error-message {
-    color: #dc3545;
+    color: var(--error-color);
     font-size: 0.875rem;
     margin-top: 0.25rem;
   }
   
   .submit-btn {
-    background-color: #FF9E5E;
+    background-color: var(--primary-purple);
     color: white;
     border: none;
     border-radius: 4px;
@@ -83,7 +83,7 @@
     margin-top: 1rem;
   
     &:hover:not(:disabled) {
-      background-color: #FF8A3D;
+      background-color: var(--secondary-purple);
     }
   
     &:disabled {
@@ -95,16 +95,16 @@
   .auth-redirect {
     text-align: center;
     margin-top: 1.5rem;
-    color: #666;
+    color: var(--text-color-light);
   
     a {
-      color: #FF9E5E;
+      color: var(--primary-purple);
       text-decoration: none;
       font-weight: 500;
       transition: color 0.3s ease;
   
       &:hover {
-        color: #FF8A3D;
+        color: var(--secondary-purple);
         text-decoration: underline;
       }
     }
