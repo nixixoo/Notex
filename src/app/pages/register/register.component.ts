@@ -30,17 +30,13 @@ export class RegisterComponent {
     @Inject(Router) private router: Router
   ) {
     this.registerForm = this.fb.group({
-      name: ['', Validators.required],
-      email: ['', [Validators.required, Validators.email]],
+      username: ['', [Validators.required]],
       password: ['', [Validators.required, Validators.minLength(6)]]
     });
   }
 
-  get name() {
-    return this.registerForm.get("name")
-  }
-  get email() {
-    return this.registerForm.get("email")
+  get username() {
+    return this.registerForm.get("username")
   }
   get password() {
     return this.registerForm.get("password")
@@ -65,4 +61,3 @@ export class RegisterComponent {
     })
   }
 }
-
