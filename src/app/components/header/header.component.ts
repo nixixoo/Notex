@@ -1,13 +1,14 @@
-import { Component, Inject } from "@angular/core"
-import { CommonModule } from "@angular/common"
+import { Component, Inject, PLATFORM_ID } from "@angular/core"
+import { CommonModule, isPlatformBrowser } from "@angular/common"
 import { RouterLink, RouterLinkActive } from "@angular/router"
 import { AuthService } from "../../services/auth.service"
 import { animate, style, transition, trigger } from "@angular/animations"
+import { FormsModule } from "@angular/forms"
 
 @Component({
   selector: "app-header",
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterLink, RouterLinkActive, FormsModule],
   templateUrl: "./header.component.html",
   styleUrls: ["./header.component.scss"],
   animations: [
@@ -17,10 +18,42 @@ import { animate, style, transition, trigger } from "@angular/animations"
   ],
 })
 export class HeaderComponent {
-  constructor(@Inject(AuthService) public authService: AuthService) {}
+  isDarkMode = false;
+
+  constructor(
+    @Inject(AuthService) public authService: AuthService,
+    @Inject(PLATFORM_ID) private platformId: Object
+  ) {
+    if (isPlatformBrowser(this.platformId)) {
+      this.loadTheme();
+    }
+  }
 
   logout(): void {
     this.authService.logout()
+  }
+
+  toggleDarkMode(): void {
+    this.isDarkMode = !this.isDarkMode
+    this.applyTheme()
+  }
+
+  private loadTheme(): void {
+    const savedTheme = localStorage.getItem("theme")
+    this.isDarkMode = savedTheme === "dark"
+    this.applyTheme()
+  }
+
+  private applyTheme(): void {
+    if (isPlatformBrowser(this.platformId)) {
+      if (this.isDarkMode) {
+        document.documentElement.setAttribute("data-theme", "dark")
+        localStorage.setItem("theme", "dark")
+      } else {
+        document.documentElement.removeAttribute("data-theme")
+        localStorage.setItem("theme", "light")
+      }
+    }
   }
 }
 

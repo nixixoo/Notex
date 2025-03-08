@@ -1,10 +1,13 @@
-import { Component, type OnInit, Inject } from "@angular/core"
+import { Component, type OnInit, Inject, PLATFORM_ID } from "@angular/core"
 import { CommonModule } from "@angular/common"
 import { RouterLink } from "@angular/router"
 import { FormBuilder, type FormGroup, ReactiveFormsModule, Validators } from "@angular/forms"
 import { NotesService } from "../../services/notes.service"
 import type { Note } from "../../models/note.model"
 import { animate, query, stagger, style, transition, trigger } from "@angular/animations"
+import { FormsModule } from "@angular/forms"
+import { PreviewFormatPipe } from "../../pipes/preview-format.pipe"
+import { isPlatformBrowser } from "@angular/common"
 
 interface CreateNoteRequest {
   title: string
@@ -15,7 +18,7 @@ interface CreateNoteRequest {
 @Component({
   selector: "app-notes-list",
   standalone: true,
-  imports: [CommonModule, RouterLink, ReactiveFormsModule],
+  imports: [CommonModule, RouterLink, ReactiveFormsModule, FormsModule, PreviewFormatPipe],
   templateUrl: "./notes-list.component.html",
   styleUrls: ["./notes-list.component.scss"],
   animations: [
@@ -44,6 +47,13 @@ interface CreateNoteRequest {
         ),
       ]),
     ]),
+    trigger("previewExpand", [
+      transition(":enter", [
+        style({ height: 0, opacity: 0 }),
+        animate("300ms ease-out", style({ height: "*", opacity: 1 })),
+      ]),
+      transition(":leave", [animate("300ms ease-in", style({ height: 0, opacity: 0 }))]),
+    ]),
   ],
 })
 export class NotesListComponent implements OnInit {
@@ -51,12 +61,15 @@ export class NotesListComponent implements OnInit {
   isLoadingNotes = true
   showNewNoteForm = false
   newNoteForm: FormGroup
-  isLoading = false;
+  isLoading = false
+  showPreview = false;
 
   constructor(
     @Inject(NotesService) private notesService: NotesService,
     @Inject(FormBuilder) private fb: FormBuilder
   ) {
+    
+
     this.newNoteForm = this.fb.group({
       title: ['', Validators.required],
       subtitle: ['', Validators.required]
@@ -69,6 +82,12 @@ export class NotesListComponent implements OnInit {
   get subtitle() {
     return this.newNoteForm.get("subtitle")
   }
+
+  
+
+  
+
+ 
 
   ngOnInit(): void {
     this.loadNotes()

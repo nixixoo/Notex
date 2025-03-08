@@ -1,15 +1,20 @@
 <header class="header">
-    <div class="logo">
-      <img src="assets/notex.svg" alt="Logo" class="logo-image" routerLink="/">
-    </div>
-    <nav class="nav">
-      <ng-container *ngIf="(authService.user$ | async) as user; else loginLinks">
-        <a routerLink="/notes" routerLinkActive="active" class="nav-link">My Notes</a>
-        <button (click)="logout()" class="nav-link logout-btn">Logout</button>
-      </ng-container>
-      <ng-template #loginLinks>
-        <a routerLink="/login" routerLinkActive="active" class="nav-link">Login</a>
-        <a routerLink="/register" routerLinkActive="active" class="nav-link register-btn">Register</a>
-      </ng-template>
-    </nav>
-  </header>
+  <div class="logo">
+    <img [src]="isDarkMode ? 'assets/w-notex.svg' : 'assets/notex.svg'" alt="Logo" class="logo-image" routerLink="/">
+  </div>
+  <nav class="nav">
+    <ng-container *ngIf="(authService.user$ | async) as user; else loginLinks">
+      <a routerLink="/notes" routerLinkActive="active" class="nav-link">My Notes</a>
+      <button (click)="logout()" class="nav-link logout-btn">Logout</button>
+    </ng-container>
+    <ng-template #loginLinks>
+      <a routerLink="/login" routerLinkActive="active" class="nav-link">Login</a>
+      <a routerLink="/register" routerLinkActive="active" class="nav-link register-btn">Register</a>
+    </ng-template>
+    <label class="switch">
+      <input type="checkbox" [checked]="isDarkMode" (change)="toggleDarkMode()">
+      <span class="slider round"></span>
+    </label>
+  </nav>
+</header>
+

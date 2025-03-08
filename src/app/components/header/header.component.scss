@@ -1,15 +1,3 @@
-:root {
-  --primary-purple: #bf9dfb;
-  --secondary-purple: #8d5ce4;
-  --primary-blue: #9fdeff;
-  --primary-green: #b5e9d3;
-  --text-color: #333333;
-  --text-color-light: #666666;
-  --background-color: #ffffff;
-  --error-color: #dc3545;
-  --border-color: #dddddd;
-  --shadow-color: rgba(0, 0, 0, 0.08);
-}
 
 
 .header {
@@ -59,7 +47,19 @@ display: inline-block;
     transition: color 0.3s ease;
     padding: 0.5rem 0;
     position: relative;
+
+    &:hover,
+    &.active {
+      color: var(--text-color); // Keep original color
+    }
+  
+    &:hover:after,
+    &.active:after {
+      width: 100%;
+      background-color: var(--primary-purple);
+    }
   }
+  
   
   .nav-link:after {
     content: '';
@@ -84,14 +84,21 @@ display: inline-block;
   
   .register-btn, .logout-btn {
     background-color: var(--primary-purple);
-    color: white !important;
+    color: var(--background-color);
     padding: 0.5rem 1rem;
     border-radius: 4px;
-    transition: background-color 0.3s ease;
+    transition: all 0.3s ease; // Only transition color
+
+    &:hover {
+      background-color: var(--secondary-purple);
+      color: var(--background-color); // Keep contrast color
+    }
   }
   
   .register-btn:hover, .logout-btn:hover {
     background-color: var(--secondary-purple);
+    
+    
   }
   
   .register-btn:after, .logout-btn:after {
@@ -104,3 +111,57 @@ display: inline-block;
     font-size: 1rem;
     font-weight: 500;
   }
+
+/* Dark mode toggle switch */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+  margin-left: 1rem;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: var(--primary-purple);
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
