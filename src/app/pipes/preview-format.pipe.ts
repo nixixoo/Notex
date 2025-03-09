@@ -8,7 +8,7 @@ export class PreviewFormatPipe implements PipeTransform {
   transform(value: string, maxLength = 100): string {
     if (!value) return ""
 
-    const lines = value.split("\n").slice(0, 5) // Get up to 5 lines
+    const lines = value.split("\n").slice(0, 7) // Get up to 5 lines
     let result = lines.join("\n").trim()
 
     if (result.length > maxLength) {

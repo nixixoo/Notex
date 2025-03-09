@@ -23,6 +23,7 @@ import { animate, style, transition, trigger } from "@angular/animations"
 export class LoginComponent {
   loginForm: FormGroup
   isLoading = false;
+  errorMessage: string | null = null;
 
   constructor(
     @Inject(FormBuilder) private fb: FormBuilder,
@@ -45,6 +46,7 @@ export class LoginComponent {
   onSubmit(): void {
     if (this.loginForm.invalid) return
 
+    this.errorMessage = null;
     this.isLoading = true
 
     this.authService.login(this.loginForm.value).subscribe({
@@ -57,6 +59,19 @@ export class LoginComponent {
         this.isLoading = false
         console.error("Login error:", error)
         // Handle error (show message, etc.)
+        if (error instanceof ErrorEvent) {
+          this.errorMessage = 'A network error occurred. Please check your connection.';
+        }
+        // Handle server-side errors
+        else {
+          // Extract message from different possible locations
+          this.errorMessage = error.error?.message ||  // If exists in error.error.message
+                             error.error ||           // If error.error is the message string
+                             error.message ||         // If message in error.message
+                             'An unexpected error occurred';
+        }
+      
+
       },
     })
   }

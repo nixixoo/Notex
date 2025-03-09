@@ -36,6 +36,9 @@
       <button type="submit" class="submit-btn" [disabled]="loginForm.invalid || isLoading">
         {{ isLoading ? 'Signing in...' : 'Sign In' }}
       </button>
+      <div *ngIf="errorMessage" class="error-message auth-error">
+        {{ errorMessage }}
+      </div>
       
       <p class="auth-redirect">
         Don't have an account? <a routerLink="/register">Register</a>

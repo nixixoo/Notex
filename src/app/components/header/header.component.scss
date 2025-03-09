@@ -93,6 +93,11 @@ display: inline-block;
       background-color: var(--secondary-purple);
       color: var(--background-color); // Keep contrast color
     }
+
+    &.active {
+      color: var(--background-color) !important;
+      background-color: var(--secondary-purple);
+    }
   }
   
   .register-btn:hover, .logout-btn:hover {

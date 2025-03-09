@@ -45,7 +45,6 @@ export class AuthService {
           updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
         )
       `)
-      console.log("Users table initialized")
     } catch (error) {
       console.error("Error initializing users table:", error)
     }
