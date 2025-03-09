@@ -4,6 +4,8 @@ import { FormBuilder, type FormGroup, ReactiveFormsModule, Validators } from "@a
 import { Router, RouterLink } from "@angular/router"
 import { AuthService } from "../../services/auth.service"
 import { animate, style, transition, trigger } from "@angular/animations"
+import { User } from "../../models/user.model"; // Add this import
+
 
 @Component({
   selector: "app-login",
@@ -75,4 +77,22 @@ export class LoginComponent {
       },
     })
   }
+// Add to LoginComponent class
+enterGuestMode(): void {
+  this.authService.logout();
+  this.authService.enableGuestMode();
+  
+  const guestUser: User = {
+    id: 'guest-' + Date.now().toString(),
+    username: 'guest'
+  };
+  
+  this.authService.setSession({
+    user: guestUser,
+    token: 'guest-token'
+  });
+  
+  this.router.navigate(['/notes']);
+}
+
 }

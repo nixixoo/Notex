@@ -10,6 +10,9 @@ import { isPlatformBrowser } from '@angular/common'
   providedIn: "root",
 })
 export class AuthService {
+  private readonly GUEST_KEY = "guest_mode";
+  private guestModeSubject = new BehaviorSubject<boolean>(false);
+  public guestMode$ = this.guestModeSubject.asObservable();
   private readonly TOKEN_KEY = "auth_token"
   private readonly USER_KEY = "user"
   private client = createClient({
@@ -24,8 +27,9 @@ export class AuthService {
     @Inject(Router) private router: Router,
     @Inject(PLATFORM_ID) platformId: Object
   ) {
-    this.isBrowser = isPlatformBrowser(platformId)
-    this.initDatabase()
+    this.isBrowser = isPlatformBrowser(platformId);
+    this.initDatabase();
+    this.initializeAuthState();
   }
 
   private getUserFromStorage(): User | null {
@@ -48,6 +52,46 @@ export class AuthService {
     } catch (error) {
       console.error("Error initializing users table:", error)
     }
+  }
+
+  private initializeAuthState(): void {
+    if (this.isBrowser) {
+      const user = this.getUserFromStorage();
+      const isGuest = localStorage.getItem(this.GUEST_KEY) === 'true';
+      
+      if (user) {
+        this.userSubject.next(user);
+      } else if (isGuest) {
+        this.guestModeSubject.next(true);
+      } else {
+        this.userSubject.next(null);
+        this.guestModeSubject.next(false);
+      }
+    }
+  }
+
+  isLoggedIn(): boolean {
+    return this.isAuthenticated() || this.isGuestMode();
+  }
+
+  enableGuestMode(): void {
+    if (this.isBrowser) {
+      localStorage.setItem(this.GUEST_KEY, 'true');
+    }
+    this.guestModeSubject.next(true);
+    console.log('Guest mode enabled:', this.isGuestMode()); // Verify state
+  }
+
+  disableGuestMode(): void {
+    if (this.isBrowser) {
+      localStorage.removeItem(this.GUEST_KEY);
+    }
+    this.guestModeSubject.next(false);
+  }
+
+  isGuestMode(): boolean {
+    if (!this.isBrowser) return false
+    return localStorage.getItem(this.GUEST_KEY) === 'true'
   }
 
   login(credentials: LoginRequest): Observable<AuthResponse> {
@@ -106,18 +150,29 @@ export class AuthService {
     )
   }
 
-  logout(): void {
-    if (this.isBrowser) {
-      localStorage.removeItem(this.TOKEN_KEY)
-      localStorage.removeItem(this.USER_KEY)
-    }
-    this.userSubject.next(null)
-    this.router.navigate(["/login"])
+  // auth.service.ts
+logout(): void {
+  if (this.isBrowser) {
+    // Keep guest notes for potential migration
+    localStorage.removeItem(this.TOKEN_KEY);
+    localStorage.removeItem(this.USER_KEY);
+    localStorage.removeItem(this.GUEST_KEY);
   }
+  this.userSubject.next(null);
+  this.guestModeSubject.next(false);
+  this.router.navigate(['/login']);
+}
 
-  isAuthenticated(): boolean {
-    return !!this.getToken()
-  }
+  // Modify isAuthenticated method
+isAuthenticated(): boolean {
+  // Only check for valid token, not guest mode
+  return !!this.getToken();
+}
+
+// Add separate method for guest check
+isGuestActive(): boolean {
+  return this.isGuestMode() && !this.isAuthenticated();
+}
 
   getToken(): string | null {
     if (!this.isBrowser) return null

@@ -118,5 +118,33 @@
     background-color: rgba(var(--error-color-rgb), 0.1);
     border: 1px solid var(--error-color);
   }
+
+  .guest-cta {
+    text-align: center;
+    
+    &-btn {
+      background-color: transparent;
+      border: 2px solid var(--primary-purple);
+      color: var(--primary-purple);
+      border-radius: 4px;
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      width: 100%;
+      max-width: 200px;
+  
+      &:hover {
+        background-color: var(--primary-purple);
+        color: white;
+        transform: translateY(-1px);
+      }
+  
+      &:active {
+        transform: translateY(0);
+      }
+    }
+  }
   
   

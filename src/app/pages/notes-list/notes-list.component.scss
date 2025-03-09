@@ -249,3 +249,37 @@ label {
   color: #888;
 }
 
+.guest-banner {
+  background-color: var(--guest-bg);
+  color: var(--guest-text);
+  padding: 0.5rem;
+  text-align: center;
+  font-size: 0.9rem;
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  border-radius: 4px;
+
+  .guest-btn {
+    background-color: var(--primary-purple);
+    color: var(--background-color);
+    border: none;
+    border-radius: 4px;
+    padding: 0.4rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    
+    &:hover {
+      background-color: var(--secondary-purple);
+    }
+    
+    &:active {
+      transform: scale(0.98);
+    }
+  }
+}
+

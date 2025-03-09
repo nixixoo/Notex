@@ -1,3 +1,10 @@
+<div *ngIf="authService.isGuestMode()" class="guest-banner">
+  <span>You're using guest mode. Notes will be saved locally.</span>
+  <button (click)="convertToPermanentAccount()" class="guest-btn">
+    Create Permanent Account
+  </button>
+</div>
+
 <div class="notes-container">
   <div class="notes-header">
     <h1 class="notes-title">My Notes</h1>

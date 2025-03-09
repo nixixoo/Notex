@@ -25,7 +25,7 @@ export class HeaderComponent {
     @Inject(PLATFORM_ID) private platformId: Object
   ) {
     if (isPlatformBrowser(this.platformId)) {
-      this.loadTheme();
+      this.isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
     }
   }
 
@@ -34,8 +34,12 @@ export class HeaderComponent {
   }
 
   toggleDarkMode(): void {
-    this.isDarkMode = !this.isDarkMode
-    this.applyTheme()
+    this.isDarkMode = !this.isDarkMode;
+    if (isPlatformBrowser(this.platformId)) {
+      const theme = this.isDarkMode ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', theme);
+      localStorage.setItem('theme', theme);
+    }
   }
 
   private loadTheme(): void {

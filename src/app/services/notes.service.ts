@@ -9,6 +9,8 @@ import { AuthService } from "./auth.service"
   providedIn: "root",
 })
 export class NotesService {
+  private readonly LOCAL_STORAGE_KEY = 'guest_notes';
+  private readonly GUEST_USER_ID = 'guest';
   private client = createClient({
     url: "libsql://notex-nixixo.turso.io",
     authToken:
@@ -42,28 +44,72 @@ export class NotesService {
     }
   }
 
-  getNotes(): Observable<Note[]> {
-    const userId = this.authService.getCurrentUser()?.id
-    if (!userId) return of([])
+  getLocalNotes(): Note[] {
+    const notes = localStorage.getItem(this.LOCAL_STORAGE_KEY);
+    return notes ? JSON.parse(notes) : [];
+  }
+  
+  
+  private saveLocalNotes(notes: Note[]): void {
+    localStorage.setItem(this.LOCAL_STORAGE_KEY, JSON.stringify(notes));
+  }
 
-    return from(
-      this.client.execute({
+  updateLocalNote(updatedNote: Note): void {
+    const notes = this.getLocalNotes();
+    const index = notes.findIndex(n => n.id === updatedNote.id);
+    if (index !== -1) {
+      notes[index] = updatedNote;
+      this.saveLocalNotes(notes);
+      this.notesSubject.next([
+        ...notes.filter(n => n.userId === this.GUEST_USER_ID),
+        ...this.notesSubject.value.filter(n => !n.isLocal)
+      ]);
+    }
+  }
+  getNotes(): Observable<Note[]> {
+    if (this.authService.isGuestMode()) {
+      const notes = this.getLocalNotes();
+      return of(notes);
+    }
+    if (this.authService.isAuthenticated()) {
+      const userId = this.authService.getCurrentUser()?.id;
+      if (!userId) return of([]);
+      
+      return from(this.client.execute({
         sql: "SELECT * FROM notes WHERE userId = ? ORDER BY updatedAt DESC",
         args: [userId],
-      }),
-    ).pipe(
-      map((result) => this.mapNotes(result)),
-      catchError((error) => {
-        console.error("Error fetching notes:", error)
-        throw error
-      }),
-    )
+      })).pipe(
+        map((result) => this.mapNotes(result)),
+        catchError((error) => {
+          console.error("Error fetching notes:", error);
+          throw error;
+        }),
+      );
+    }
+    else {
+      const notes = this.getLocalNotes().map(note => ({
+        ...note,
+        createdAt: new Date(note.createdAt),
+        updatedAt: new Date(note.updatedAt),
+        isLocal: true
+      }));
+      return of(notes);
+    }
   }
 
   getNoteById(id: string): Observable<Note> {
-    const userId = this.authService.getCurrentUser()?.id
-    if (!userId) throw new Error("Not authenticated")
-
+    if (this.authService.isGuestMode()) {
+      const notes = this.getLocalNotes();
+      const localNote = notes.find(n => n.id === id);
+      if (localNote) {
+        return of(localNote);
+      }
+      throw new Error('Note not found');
+    }
+  
+    const userId = this.authService.getCurrentUser()?.id;
+    if (!userId) throw new Error("Not authenticated");
+  
     return from(
       this.client.execute({
         sql: "SELECT * FROM notes WHERE id = ? AND userId = ?",
@@ -71,48 +117,99 @@ export class NotesService {
       }),
     ).pipe(
       map((result) => {
-        if (result.rows.length === 0) throw new Error("Note not found")
-        return this.mapNote(result.rows[0])
+        if (result.rows.length === 0) throw new Error("Note not found");
+        return this.mapNote(result.rows[0]);
       }),
       catchError((error) => {
-        console.error("Error fetching note:", error)
-        throw error
+        console.error("Error fetching note:", error);
+        throw error;
       }),
-    )
+    );
   }
 
   createNote(noteData: CreateNoteRequest): Observable<Note> {
-    const currentUser = this.authService.getCurrentUser()
-    if (!currentUser?.id) throw new Error("User not authenticated")
-
-    const id = Date.now().toString()
-    const now = new Date().toISOString()
-    const newNote: Note = {
-      id,
-      title: noteData.title,
-      subtitle: noteData.subtitle,
-      content: noteData.content || "",
-      createdAt: new Date(now),
-      updatedAt: new Date(now),
-      userId: currentUser.id,
+    console.log('[NotesService] createNote triggered', {
+      isAuthenticated: this.authService.isAuthenticated(),
+      isGuest: this.authService.isGuestMode()
+    });
+  
+    // Guest Mode Flow
+    if (this.authService.isGuestMode()) {
+      console.log('[NotesService] Creating local guest note');
+      const id = Date.now().toString();
+      const newNote: Note = {
+        id,
+        title: noteData.title,
+        subtitle: noteData.subtitle,
+        content: noteData.content || '',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        userId: this.GUEST_USER_ID,
+        isLocal: true
+      };
+  
+      // Update local storage
+      const notes = this.getLocalNotes();
+      notes.unshift(newNote);
+      this.saveLocalNotes(notes);
+      
+      // Update BehaviorSubject for immediate UI update
+      this.notesSubject.next([newNote, ...this.notesSubject.value]);
+      
+      return of(newNote);
     }
-
-    return from(
-      this.client.execute({
-        sql: "INSERT INTO notes (id, title, subtitle, content, createdAt, updatedAt, userId) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        args: [id, noteData.title, noteData.subtitle, newNote.content, now, now, currentUser.id],
-      }),
-    ).pipe(
-      map(() => {
-        const currentNotes = this.notesSubject.value
-        this.notesSubject.next([newNote, ...currentNotes])
-        return newNote
-      }),
-      catchError((error) => {
-        console.error("Error creating note:", error)
-        throw error
-      }),
-    )
+  
+    // Authenticated User Flow
+    if (this.authService.isAuthenticated()) {
+      console.log('[NotesService] Creating cloud note');
+      const currentUser = this.authService.getCurrentUser();
+      
+      if (!currentUser?.id) {
+        console.error('[NotesService] No user ID found for authenticated user');
+        throw new Error('User not authenticated');
+      }
+  
+      const id = Date.now().toString();
+      const now = new Date().toISOString();
+      const newNote: Note = {
+        id,
+        title: noteData.title,
+        subtitle: noteData.subtitle,
+        content: noteData.content || '',
+        createdAt: new Date(now),
+        updatedAt: new Date(now),
+        userId: currentUser.id
+      };
+  
+      return from(
+        this.client.execute({
+          sql: 'INSERT INTO notes (id, title, subtitle, content, createdAt, updatedAt, userId) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          args: [
+            id,
+            noteData.title,
+            noteData.subtitle,
+            newNote.content,
+            now,
+            now,
+            currentUser.id
+          ]
+        })
+      ).pipe(
+        map(() => {
+          const currentNotes = this.notesSubject.value;
+          this.notesSubject.next([newNote, ...currentNotes]);
+          return newNote;
+        }),
+        catchError((error) => {
+          console.error('Error creating note:', error);
+          throw error;
+        })
+      );
+    }
+  
+    // Error if neither authenticated nor in guest mode
+    console.error('[NotesService] No valid authentication method');
+    throw new Error('Please login or continue as guest');
   }
 
   updateNote(id: string, noteData: UpdateNoteRequest): Observable<Note> {
@@ -157,6 +254,16 @@ export class NotesService {
         throw error
       }),
     )
+  }
+
+  deleteLocalNote(noteId: string): void {
+    const notes = this.getLocalNotes();
+    const filteredNotes = notes.filter(n => n.id !== noteId);
+    this.saveLocalNotes(filteredNotes);
+    this.notesSubject.next([
+      ...filteredNotes,
+      ...this.notesSubject.value.filter(n => !n.isLocal)
+    ]);
   }
 
   deleteNote(id: string): Observable<void> {

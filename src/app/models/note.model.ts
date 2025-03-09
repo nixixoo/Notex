@@ -6,13 +6,14 @@ export interface Note {
   createdAt: Date
   updatedAt: Date
   userId: string
+  isLocal?: boolean // Add this line
 }
 
 export interface CreateNoteRequest {
   title: string
   subtitle: string
   content?: string
-  userId: string
+  userId?: string
 }
 
 export interface UpdateNoteRequest {

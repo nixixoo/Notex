@@ -8,6 +8,9 @@ import { animate, query, stagger, style, transition, trigger } from "@angular/an
 import { FormsModule } from "@angular/forms"
 import { PreviewFormatPipe } from "../../pipes/preview-format.pipe"
 import { isPlatformBrowser } from "@angular/common"
+import { AuthService } from "../../services/auth.service"; // Add this import
+import { Router } from "@angular/router"
+
 
 interface CreateNoteRequest {
   title: string
@@ -66,7 +69,9 @@ export class NotesListComponent implements OnInit {
 
   constructor(
     @Inject(NotesService) private notesService: NotesService,
-    @Inject(FormBuilder) private fb: FormBuilder
+    @Inject(FormBuilder) private fb: FormBuilder,
+    @Inject(AuthService) public authService: AuthService, // Add this line
+    @Inject(Router) public router: Router // Add this line
   ) {
     
 
@@ -85,7 +90,18 @@ export class NotesListComponent implements OnInit {
 
   
 
+  // notes-list.component.ts
+convertToPermanentAccount(): void {
+  // Clear guest data but keep notes temporarily
+  this.authService.logout();
   
+  // Navigate to register with preserved notes
+  this.router.navigate(['/register'], {
+    state: { 
+      notes: this.notes.filter(n => n.isLocal) 
+    }
+  });
+}
 
  
 
@@ -115,27 +131,29 @@ export class NotesListComponent implements OnInit {
   }
 
   createNote(): void {
-    if (this.newNoteForm.invalid) return
-
-    this.isLoading = true
-
+    if (this.newNoteForm.invalid) return;
+  
+    this.isLoading = true;
+    
+    // Create the note data without userId
     const noteData: CreateNoteRequest = {
       ...this.newNoteForm.value,
-      userId: "placeholder-user-id", // Replace this with actual user ID when you have authentication
-    }
-
+      content: ''
+      // Do NOT include userId here
+    };
+  
     this.notesService.createNote(noteData).subscribe({
       next: (note) => {
-        this.notes = [note, ...this.notes]
-        this.isLoading = false
-        this.newNoteForm.reset()
-        this.showNewNoteForm = false
+        this.notes = [note, ...this.notes];
+        this.isLoading = false;
+        this.newNoteForm.reset();
+        this.showNewNoteForm = false;
       },
       error: (error) => {
-        console.error("Error creating note:", error)
-        this.isLoading = false
+        console.error("Error creating note:", error);
+        this.isLoading = false;
       },
-    })
+    });
   }
 }
 

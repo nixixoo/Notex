@@ -40,9 +40,19 @@
         {{ errorMessage }}
       </div>
       
-      <p class="auth-redirect">
+
+      
+      <div class="auth-redirect">
         Don't have an account? <a routerLink="/register">Register</a>
-      </p>
+      </div>
+
+      <div class="guest-cta">
+        <button (click)="enterGuestMode()" class="guest-cta-btn">
+          Continue as Guest
+        </button>
+      </div>
+    
+      
     </form>
   </div>
 </div>
