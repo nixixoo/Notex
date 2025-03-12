@@ -121,52 +121,80 @@ display: inline-block;
 .switch {
   position: relative;
   display: inline-block;
-  width: 60px;
+  width: 80px; /* Proper width for both icons */
   height: 34px;
   margin-left: 1rem;
-}
 
-.switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
+  input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
 
-.slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #ccc;
-  transition: .4s;
-}
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 34px;
 
-.slider:before {
-  position: absolute;
-  content: "";
-  height: 26px;
-  width: 26px;
-  left: 4px;
-  bottom: 4px;
-  background-color: white;
-  transition: .4s;
-}
+    &:before {
+      position: absolute;
+      content: "";
+      height: 26px;
+      width: 26px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+      z-index: 2;
+    }
+  }
 
-input:checked + .slider {
-  background-color: var(--primary-purple);
-}
+  .sun-icon {
+    position: absolute;
+    left: 10px;
+    top: 55%;
+    transform: translateY(-50%);
+    z-index: 1;
+    color: var(--text-color);
+    font-size: 20px;
+    opacity: 1;
+    transition: opacity 0.3s ease color 0.3s ease;
+    pointer-events: none;
+  }
 
-input:checked + .slider:before {
-  transform: translateX(26px);
-}
+  .moon-icon {
+    position: absolute;
+    right: 5px;
+    top: 55%;
+    transform: translateY(-50%);
+    z-index: 1;
+    color: var(--text-color);
+    font-size: 20px;
+    opacity: 1;
+    transition: opacity 0.3s ease color 0.3s ease;
+    pointer-events: none;
+  }
 
-.slider.round {
-  border-radius: 34px;
-}
+  input:checked + .slider {
+    background-color: var(--primary-purple);
 
-.slider.round:before {
-  border-radius: 50%;
-}
+    &:before {
+      transform: translateX(46px);
+    }
 
+    .light-icon {
+      opacity: 0;
+    }
+    
+    .dark-icon {
+      opacity: 1;
+    }
+  }
+}

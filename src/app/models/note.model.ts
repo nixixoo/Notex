@@ -7,6 +7,7 @@ export interface Note {
   updatedAt: Date
   userId: string
   isLocal?: boolean // Add this line
+  status?: "active" | "archived" | "trashed"
 }
 
 export interface CreateNoteRequest {
@@ -20,5 +21,6 @@ export interface UpdateNoteRequest {
   title?: string
   subtitle?: string
   content?: string
+  status?: "active" | "archived" | "trashed"
 }
 

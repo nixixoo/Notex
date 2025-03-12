@@ -13,7 +13,10 @@
     </ng-template>
     <label class="switch">
       <input type="checkbox" [checked]="isDarkMode" (change)="toggleDarkMode()">
-      <span class="slider round"></span>
+      <span class="slider round">
+        <mat-icon class="sun-icon">light_mode</mat-icon>
+        <mat-icon class="moon-icon">dark_mode</mat-icon>
+      </span>
     </label>
   </nav>
 </header>

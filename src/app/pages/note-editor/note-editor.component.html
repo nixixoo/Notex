@@ -2,7 +2,6 @@
     <div class="editor-header">
       <button class="back-btn" (click)="goBack()">← Back to Notes</button>
       <div class="editor-actions">
-        <button class="delete-btn" (click)="deleteNote()">Delete</button>
         <button class="save-btn" [disabled]="noteForm.invalid || isSaving" (click)="saveNote()">
           {{ isSaving ? 'Saving...' : 'Save' }}
         </button>
@@ -21,29 +20,47 @@
     
     <form *ngIf="!isLoading && note" [formGroup]="noteForm" class="note-form">
       <div class="form-group title-group">
-        <input 
-          type="text" 
-          formControlName="title" 
-          class="title-input"
-          [class.is-invalid]="title?.invalid && (title?.dirty || title?.touched)"
-          placeholder="Title"
-        >
+        <div class="input-wrapper">
+          <input 
+            type="text" 
+            formControlName="title" 
+            class="title-input"
+            [class.is-invalid]="title?.invalid && (title?.dirty || title?.touched)"
+            placeholder="Title"
+            maxlength="75"
+          >
+          <div class="character-counter" 
+     [class.warning]="titleLengthWarning"
+     [class.danger]="title?.value?.length === 75">
+  {{ title?.value?.length || 0 }}/75
+</div>
         <div *ngIf="title?.invalid && (title?.dirty || title?.touched)" class="error-message">
           <span *ngIf="title?.errors?.['required']">Title is required</span>
+          <span *ngIf="title?.errors?.['maxlength']">Maximum 75 characters</span>
+        </div>
         </div>
       </div>
       
       <div class="form-group subtitle-group">
+        <div class="input-wrapper">
         <input 
           type="text" 
           formControlName="subtitle" 
           class="subtitle-input"
           [class.is-invalid]="subtitle?.invalid && (subtitle?.dirty || subtitle?.touched)"
           placeholder="Subtitle"
+          maxlength="150"
         >
+        <div class="character-counter" 
+     [class.warning]="subtitleLengthWarning"
+     [class.danger]="subtitle?.value?.length === 150">
+  {{ subtitle?.value?.length || 0 }}/150
+</div>
         <div *ngIf="subtitle?.invalid && (subtitle?.dirty || subtitle?.touched)" class="error-message">
           <span *ngIf="subtitle?.errors?.['required']">Subtitle is required</span>
+          <span *ngIf="subtitle?.errors?.['maxlength']">Maximum 150 characters</span>
         </div>
+      </div>
       </div>
       
       <div class="form-group content-group">

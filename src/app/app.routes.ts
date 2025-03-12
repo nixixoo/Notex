@@ -18,6 +18,8 @@ export const routes: Routes = [
     component: RegisterComponent,
     canActivate: [noAuthGuard] // Add this
   },
+  { path: "notes/archived", component: NotesListComponent, canActivate: [authGuard], data: { status: "archived" } },
+  { path: "notes/trash", component: NotesListComponent, canActivate: [authGuard], data: { status: "trashed" } },
   { 
     path: 'notes', 
     component: NotesListComponent,

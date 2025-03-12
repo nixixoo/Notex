@@ -4,11 +4,12 @@ import { RouterLink, RouterLinkActive } from "@angular/router"
 import { AuthService } from "../../services/auth.service"
 import { animate, style, transition, trigger } from "@angular/animations"
 import { FormsModule } from "@angular/forms"
+import { MatIconModule } from "@angular/material/icon"
 
 @Component({
   selector: "app-header",
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive, FormsModule],
+  imports: [CommonModule, RouterLink, RouterLinkActive, FormsModule, MatIconModule],
   templateUrl: "./header.component.html",
   styleUrls: ["./header.component.scss"],
   animations: [

@@ -31,19 +31,19 @@
     gap: 1rem;
   }
   
-  .save-btn, .delete-btn {
+  .save-btn {
     border: none;
     border-radius: 4px;
     padding: 0.6rem 1.2rem;
     font-size: 1rem;
     font-weight: 500;
     cursor: pointer;
-    transition: background-color 0.3s ease, opacity 0.3s ease;
+    transition: all 0.3s ease;
   }
   
   .save-btn {
     background-color: var(--primary-purple);
-    color: white;
+    color: var(--background-color);
   
     &:hover:not(:disabled) {
       background-color: var(--secondary-purple);
@@ -55,16 +55,6 @@
     }
   }
   
-  .delete-btn {
-    background-color: var(--background-color);
-    color: var(--error-color);
-    border: 1px solid var(--error-color);
-  
-    &:hover {
-      background-color: var(--error-color);
-      color: var(--background-color);
-    }
-  }
   
   .loading-container {
     display: flex;
@@ -149,4 +139,29 @@
     margin-top: 0.25rem;
   }
   
+  .input-wrapper {
+    position: relative;
+    margin-bottom: 1.5rem; // Space for error message
+  }
+
+  .character-counter {
+    font-size: 0.75rem;
+    color: var(--text-color-light);
+    text-align: right;
+    margin-top: 0.25rem;
+    transition: color 0.3s ease;
+    
+    &.warning {
+      color: #ffc107; // Yellow warning
+    }
+    
+    &.danger {
+      color: var(--error-color); // Red danger
+    }
+  }
   
+  .error-message {
+    position: absolute;
+    bottom: -1.25rem;
+    left: 0;
+  }
