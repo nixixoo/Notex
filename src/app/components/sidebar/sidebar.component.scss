@@ -1,0 +1,110 @@
+.sidebar-container {
+  position: fixed;
+  left: -270px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 250px;
+  height: 80vh;
+  background: var(--background-color);
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1000;
+  margin: 20px;
+  box-shadow: 0 2px 8px var(--shadow-color);
+
+  &.open {
+    left: 20px;
+  }
+}
+
+
+.sidebar-toggle {
+  position: absolute;
+  right: -40px; // Closer to sidebar
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 50px;
+  background: var(--primary-purple);
+  border: none;
+  border-radius: 0 12px 12px 0; // More rounded on right side
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px var(--shadow-color);
+
+  &:hover {
+    background: var(--secondary-purple);
+  }
+
+  mat-icon {
+    transition: all 0.3s ease;
+    color: var(--background-color);
+  }
+}
+
+.sidebar-content {
+  padding: 1.5rem;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.sidebar-header {
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 1rem;
+}
+
+.sidebar-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-color);
+  margin: 0;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  color: var(--text-color);
+  text-decoration: none;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: var(--surface-color);
+  }
+
+  &.active {
+    background: var(--surface-color);
+    color: var(--primary-purple);
+    font-weight: 500;
+  }
+
+  mat-icon {
+    margin-right: 1rem;
+  }
+
+  .count {
+    margin-left: auto;
+    background: var(--primary-purple);
+    color: var(--background-color);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+  }
+
+  &:empty {
+    display: none;
+  }
+}

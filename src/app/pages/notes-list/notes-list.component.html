@@ -1,80 +1,105 @@
-<div *ngIf="authService.isGuestMode()" class="guest-banner">
-  <span>You're using guest mode. Notes will be saved locally.</span>
-  <button (click)="convertToPermanentAccount()" class="guest-btn">
-    Create Permanent Account
-  </button>
-</div>
-
-<div class="notes-container">
-  <div class="notes-header">
-    <h1 class="notes-title">My Notes</h1>
-    <div class="header-controls">
-      <!-- Keep only the preview toggle and add note button -->
-      <label class="switch">
-        <input type="checkbox" [(ngModel)]="showPreview">
-        <span class="slider round"></span>
-      </label>
-      <span class="preview-label">Show Preview</span>
-      <button class="add-note-btn" (click)="toggleNewNoteForm()">
-        {{ showNewNoteForm ? 'Cancel' : 'Add Note' }}
+<div class="page-layout">
+  <app-sidebar 
+  [activeCount]="activeCount" 
+  [archivedCount]="archivedCount" 
+  [trashedCount]="trashedCount">
+</app-sidebar>
+  
+  <div class="main-content">
+    <div *ngIf="authService.isGuestMode()" class="guest-banner">
+      <span>You're using guest mode. Notes will be saved locally.</span>
+      <button (click)="convertToPermanentAccount()" class="guest-btn">
+        Create Permanent Account
       </button>
     </div>
-  </div>
-  
-  <div *ngIf="showNewNoteForm" class="new-note-form-container" [@slideDown]>
-    <form [formGroup]="newNoteForm" (ngSubmit)="createNote()" class="new-note-form">
-      <div class="form-group">
-        <label for="title">Title</label>
-        <input 
-          type="text" 
-          id="title" 
-          formControlName="title" 
-          class="form-control"
-          [class.is-invalid]="title?.invalid && (title?.dirty || title?.touched)"
-        >
-        <div *ngIf="title?.invalid && (title?.dirty || title?.touched)" class="error-message">
-          <span *ngIf="title?.errors?.['required']">Title is required</span>
+
+    <div class="notes-container">
+      <div class="notes-header">
+        <h1 class="notes-title">{{ getPageTitle() }}</h1>
+        <div class="header-controls">
+          <!-- Only show preview toggle and add note button on active notes -->
+          <ng-container *ngIf="currentStatus === 'active'">
+            <label class="switch">
+              <input type="checkbox" [(ngModel)]="showPreview">
+              <span class="slider round"></span>
+            </label>
+            <span class="preview-label">Show Preview</span>
+            <button class="add-note-btn" (click)="toggleNewNoteForm()">
+              {{ showNewNoteForm ? 'Cancel' : 'Add Note' }}
+            </button>
+          </ng-container>
         </div>
       </div>
       
-      <div class="form-group">
-        <label for="subtitle">Subtitle</label>
-        <input 
-          type="text" 
-          id="subtitle" 
-          formControlName="subtitle" 
-          class="form-control"
-          [class.is-invalid]="subtitle?.invalid && (subtitle?.dirty || subtitle?.touched)"
-        >
-        <div *ngIf="subtitle?.invalid && (subtitle?.dirty || subtitle?.touched)" class="error-message">
-          <span *ngIf="subtitle?.errors?.['required']">Subtitle is required</span>
-        </div>
+      <div *ngIf="showNewNoteForm && currentStatus === 'active'" class="new-note-form-container" [@slideDown]>
+        <form [formGroup]="newNoteForm" (ngSubmit)="createNote()" class="new-note-form">
+          <div class="form-group">
+            <label for="title">Title</label>
+            <input 
+              type="text" 
+              id="title" 
+              formControlName="title" 
+              class="form-control"
+              [class.is-invalid]="title?.invalid && (title?.dirty || title?.touched)"
+            >
+            <div *ngIf="title?.invalid && (title?.dirty || title?.touched)" class="error-message">
+              <span *ngIf="title?.errors?.['required']">Title is required</span>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="subtitle">Subtitle</label>
+            <input 
+              type="text" 
+              id="subtitle" 
+              formControlName="subtitle" 
+              class="form-control"
+              [class.is-invalid]="subtitle?.invalid && (subtitle?.dirty || subtitle?.touched)"
+            >
+            <div *ngIf="subtitle?.invalid && (subtitle?.dirty || subtitle?.touched)" class="error-message">
+              <span *ngIf="subtitle?.errors?.['required']">Subtitle is required</span>
+            </div>
+          </div>
+          
+          <button type="submit" class="submit-btn" [disabled]="newNoteForm.invalid || isLoading">
+            {{ isLoading ? 'Creating...' : 'Create Note' }}
+          </button>
+        </form>
       </div>
       
-      <button type="submit" class="submit-btn" [disabled]="newNoteForm.invalid || isLoading">
-        {{ isLoading ? 'Creating...' : 'Create Note' }}
-      </button>
-    </form>
-  </div>
-  
-  <div *ngIf="isLoadingNotes" class="loading-container">
-    <div class="loading-spinner"></div>
-    <p>Loading notes...</p>
-  </div>
-  
-  <div *ngIf="!isLoadingNotes && notes.length === 0" class="empty-notes">
-    <p>You don't have any notes yet. Create your first note!</p>
-  </div>
-  
-  <div *ngIf="!isLoadingNotes && notes.length > 0" class="notes-grid" [@listAnimation]="notes.length">
-    <div *ngFor="let note of notes" class="note-card" [routerLink]="['/notes', note.id]">
-      <h2 class="note-title">{{ note.title }}</h2>
-      <p class="note-subtitle">{{ note.subtitle }}</p>
-      <div *ngIf="showPreview" class="note-preview-container" [@previewExpand]>
-        <pre class="note-preview">{{ note.content | previewFormat }}</pre>
+      <div *ngIf="isLoadingNotes" class="loading-container">
+        <div class="loading-spinner"></div>
+        <p>Loading notes...</p>
       </div>
-      <div class="note-footer">
-        <span class="note-date">{{ note.updatedAt | date:'medium' }}</span>
+      
+      <div *ngIf="!isLoadingNotes && showEmptyMessage" class="empty-notes">
+        <p *ngIf="currentStatus === 'active'">You don't have any notes yet. Create your first note!</p>
+        <p *ngIf="currentStatus === 'archived'">You don't have any archived notes.</p>
+        <p *ngIf="currentStatus === 'trashed'">Your trash is empty.</p>
+      </div>
+      
+      <div *ngIf="!isLoadingNotes && notes.length > 0" class="notes-grid" [@listAnimation]="notes.length">
+        <div *ngFor="let note of notes; trackBy: trackNoteById" class="note-card">
+          <div class="note-card-content" [routerLink]="['/notes', note.id]">
+            <h2 class="note-title">{{ note.title }}</h2>
+            <p class="note-subtitle">{{ note.subtitle }}</p>
+            <div *ngIf="showPreview && currentStatus === 'active'" class="note-preview-container" [@previewExpand]>
+              <pre class="note-preview">{{ note.content | previewFormat }}</pre>
+            </div>
+            <div class="note-footer">
+              <span class="note-date">{{ note.updatedAt | date:'medium' }}</span>
+            </div>
+          </div>
+          <div class="note-menu" (click)="stopPropagation($event)">
+            <app-note-menu 
+              [note]="note"
+              (archive)="onArchive($event)"
+              (trash)="onTrash($event)"
+              (restore)="onRestore($event)"
+              (delete)="onDelete($event)">
+            </app-note-menu>
+          </div>
+        </div>
       </div>
     </div>
   </div>

@@ -1,27 +1,38 @@
-import { Component, type OnInit, Inject, PLATFORM_ID } from "@angular/core"
+import { Component, type OnInit, Inject } from "@angular/core"
 import { CommonModule } from "@angular/common"
-import { RouterLink } from "@angular/router"
+import { RouterLink, ActivatedRoute } from "@angular/router"
 import { FormBuilder, type FormGroup, ReactiveFormsModule, Validators } from "@angular/forms"
 import { NotesService } from "../../services/notes.service"
 import type { Note } from "../../models/note.model"
 import { animate, query, stagger, style, transition, trigger } from "@angular/animations"
 import { FormsModule } from "@angular/forms"
 import { PreviewFormatPipe } from "../../pipes/preview-format.pipe"
-import { isPlatformBrowser } from "@angular/common"
-import { AuthService } from "../../services/auth.service"; // Add this import
+import { AuthService } from "../../services/auth.service"
 import { Router } from "@angular/router"
-
+import { SidebarComponent } from "../../components/sidebar/sidebar.component"
+import { NoteMenuComponent } from "../../components/note-menu/note-menu.component"
+import { MatIconModule } from "@angular/material/icon"
+import { SidebarService } from "../../services/sidebar.service"
 
 interface CreateNoteRequest {
   title: string
   subtitle: string
-  userId: string
+  content?: string
 }
 
 @Component({
   selector: "app-notes-list",
   standalone: true,
-  imports: [CommonModule, RouterLink, ReactiveFormsModule, FormsModule, PreviewFormatPipe],
+  imports: [
+    CommonModule,
+    RouterLink,
+    ReactiveFormsModule,
+    FormsModule,
+    PreviewFormatPipe,
+    SidebarComponent,
+    NoteMenuComponent,
+    MatIconModule,
+  ],
   templateUrl: "./notes-list.component.html",
   styleUrls: ["./notes-list.component.scss"],
   animations: [
@@ -44,11 +55,20 @@ interface CreateNoteRequest {
           ":enter",
           [
             style({ opacity: 0, transform: "translateY(15px)" }),
-            stagger(100, [animate("0.3s ease-out", style({ opacity: 1, transform: "translateY(0)" }))]),
+            stagger(100, [
+              animate("0.3s ease-out", style({ opacity: 1, transform: "translateY(0)" }))
+            ])
           ],
-          { optional: true },
+          { optional: true }
         ),
-      ]),
+        query(
+          ":leave",
+          [
+            animate("0.3s ease-out", style({ opacity: 0, transform: "translateX(30px)" }))
+          ],
+          { optional: true }
+        )
+      ])
     ]),
     trigger("previewExpand", [
       transition(":enter", [
@@ -65,19 +85,25 @@ export class NotesListComponent implements OnInit {
   showNewNoteForm = false
   newNoteForm: FormGroup
   isLoading = false
-  showPreview = false;
+  showPreview = false
+  currentStatus: "active" | "archived" | "trashed" = "active"
+  activeCount = 0
+  archivedCount = 0
+  trashedCount = 0
+  showEmptyMessage = false;
 
   constructor(
     @Inject(NotesService) private notesService: NotesService,
     @Inject(FormBuilder) private fb: FormBuilder,
-    @Inject(AuthService) public authService: AuthService, // Add this line
-    @Inject(Router) public router: Router // Add this line
+    @Inject(AuthService) public authService: AuthService,
+    @Inject(Router) public router: Router,
+    @Inject(ActivatedRoute) private route: ActivatedRoute,
+    public sidebarService: SidebarService
   ) {
-    
-
     this.newNoteForm = this.fb.group({
       title: ['', Validators.required],
-      subtitle: ['', Validators.required]
+      subtitle: ['', Validators.required],
+      content: ['']
     });
   }
 
@@ -88,38 +114,61 @@ export class NotesListComponent implements OnInit {
     return this.newNoteForm.get("subtitle")
   }
 
-  
-
-  // notes-list.component.ts
-convertToPermanentAccount(): void {
-  // Clear guest data but keep notes temporarily
-  this.authService.logout();
-  
-  // Navigate to register with preserved notes
-  this.router.navigate(['/register'], {
-    state: { 
-      notes: this.notes.filter(n => n.isLocal) 
-    }
-  });
-}
-
- 
-
-  ngOnInit(): void {
-    this.loadNotes()
+  trackNoteById(index: number, note: Note): string {
+    return note.id;
   }
 
-  loadNotes(): void {
-    this.isLoadingNotes = true
-    this.notesService.getNotes().subscribe({
+  convertToPermanentAccount(): void {
+    // Clear guest data but keep notes temporarily
+    this.authService.logout()
+
+    // Navigate to register with preserved notes
+    this.router.navigate(["/register"], {
+      state: {
+        notes: this.notes.filter((n) => n.isLocal),
+      },
+    })
+  }
+
+  
+
+  ngOnInit(): void {
+    this.route.data.subscribe((data) => {
+      this.currentStatus = data["status"] || "active"
+      this.loadNotes()
+    })
+
+    this.loadNoteCounts()
+  }
+
+  loadNotes(showLoading: boolean = true): void {
+    if (showLoading) this.isLoadingNotes = true;
+  
+    this.notesService.getNotes(this.currentStatus).subscribe({
       next: (notes) => {
-        this.notes = notes
-        this.isLoadingNotes = false
+        this.notes = notes;
+        this.isLoadingNotes = false;
+  
+        // Delay empty message for animation
+        if (notes.length === 0) {
+          setTimeout(() => this.showEmptyMessage = true, 300); // Match animation duration (300ms)
+        } else {
+          this.showEmptyMessage = false;
+        }
       },
       error: (error) => {
-        console.error("Error loading notes:", error)
-        this.isLoadingNotes = false
+        console.error("Error loading notes:", error);
+        this.isLoadingNotes = false;
+        this.showEmptyMessage = false;
       },
+    });
+  }
+
+  loadNoteCounts(): void {
+    this.notesService.getNotesCount().subscribe((counts) => {
+      this.activeCount = counts.active
+      this.archivedCount = counts.archived
+      this.trashedCount = counts.trashed
     })
   }
 
@@ -131,29 +180,94 @@ convertToPermanentAccount(): void {
   }
 
   createNote(): void {
-    if (this.newNoteForm.invalid) return;
-  
-    this.isLoading = true;
-    
-    // Create the note data without userId
+    if (this.newNoteForm.invalid) return
+
+    this.isLoading = true
+
     const noteData: CreateNoteRequest = {
       ...this.newNoteForm.value,
-      content: ''
-      // Do NOT include userId here
-    };
-  
+    }
+
     this.notesService.createNote(noteData).subscribe({
       next: (note) => {
-        this.notes = [note, ...this.notes];
-        this.isLoading = false;
-        this.newNoteForm.reset();
-        this.showNewNoteForm = false;
+        if (this.currentStatus === "active") {
+          this.notes = [note, ...this.notes]
+        }
+        this.loadNoteCounts()
+        this.isLoading = false
+        this.newNoteForm.reset()
+        this.showNewNoteForm = false
       },
       error: (error) => {
-        console.error("Error creating note:", error);
-        this.isLoading = false;
+        console.error("Error creating note:", error)
+        this.isLoading = false
       },
-    });
+    })
+  }
+
+  onArchive(note: Note): void {
+  this.notesService.archiveNote(note.id).subscribe({
+    next: () => {
+      this.loadNotes(false); // Skip loading animation
+      this.loadNoteCounts();
+      },
+      error: (error) => {
+        console.error("Error archiving note:", error)
+      },
+    })
+  }
+
+  onTrash(note: Note): void {
+    this.notesService.trashNote(note.id).subscribe({
+      next: () => {
+        this.loadNotes(false); // Skip loading animation
+        this.loadNoteCounts() // Add this line
+      },
+      error: (error) => {
+        console.error("Error trashing note:", error)
+      },
+    })
+  }
+
+  onRestore(note: Note): void {
+    this.notesService.restoreNote(note.id).subscribe({
+      next: () => {
+      this.loadNotes(false); // Skip loading animation
+      this.loadNoteCounts() // Add this line
+      },
+      error: (error) => {
+        console.error("Error restoring note:", error)
+      },
+    })
+  }
+
+  onDelete(note: Note): void {
+    if (confirm("Are you sure you want to permanently delete this note? This action cannot be undone.")) {
+      this.notesService.deleteNote(note.id).subscribe({
+        next: () => {
+          this.notes = this.notes.filter((n) => n.id !== note.id)
+          this.loadNoteCounts()
+        },
+        error: (error) => {
+          console.error("Error deleting note:", error)
+        },
+      })
+    }
+  }
+
+  getPageTitle(): string {
+    switch (this.currentStatus) {
+      case "archived":
+        return "Archived Notes"
+      case "trashed":
+        return "Trash"
+      default:
+        return "My Notes"
+    }
+  }
+
+  stopPropagation(event: Event): void {
+    event.stopPropagation()
   }
 }
 

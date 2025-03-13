@@ -14,12 +14,15 @@ import { MatIconModule } from "@angular/material/icon"
   styleUrls: ["./header.component.scss"],
   animations: [
     trigger("fadeIn", [
-      transition(":enter", [style({ opacity: 0 }), animate("0.3s ease-in-out", style({ opacity: 1 }))]),
+      transition(":enter", [
+        style({ opacity: 0, transform: 'translateY(-10px)' }),
+        animate('0.3s ease-out', style({ opacity: 1, transform: 'translateY(0)' }))
+      ])
     ]),
   ],
 })
 export class HeaderComponent {
-  isDarkMode = false;
+  isDarkMode: boolean | undefined;
 
   constructor(
     @Inject(AuthService) public authService: AuthService,

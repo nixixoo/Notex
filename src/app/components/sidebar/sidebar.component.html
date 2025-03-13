@@ -1,0 +1,43 @@
+<div class="sidebar-container" [class.open]="sidebarService.isOpen$ | async">
+  <!-- Toggle Button -->
+  <button class="sidebar-toggle" (click)="toggle()">
+    <mat-icon>{{ (sidebarService.isOpen$ | async) ? 'chevron_left' : 'chevron_right' }}</mat-icon>
+  </button>
+
+  <!-- Sidebar Content -->
+  <div class="sidebar-content">
+    <div class="sidebar-header">
+      <h3 class="sidebar-title">Notes</h3>
+    </div>
+    
+    <nav class="sidebar-nav">
+      <a routerLink="/notes" 
+         routerLinkActive="active" 
+         [routerLinkActiveOptions]="{exact: true}" 
+         class="nav-item"
+         (click)="handleNavClick($event)">
+        <mat-icon>note</mat-icon>
+        <span>All Notes</span>
+        <span class="count" *ngIf="activeCount > 0" [@countFadeIn]>{{ activeCount }}</span>
+      </a>
+      
+      <a routerLink="/notes/archived" 
+         routerLinkActive="active" 
+         class="nav-item"
+         (click)="handleNavClick($event)">
+        <mat-icon>archive</mat-icon>
+        <span>Archive</span>
+        <span class="count" *ngIf="archivedCount > 0" [@countFadeIn]>{{ archivedCount }}</span>
+      </a>
+      
+      <a routerLink="/notes/trash" 
+         routerLinkActive="active" 
+         class="nav-item"
+         (click)="handleNavClick($event)">
+        <mat-icon>delete</mat-icon>
+        <span>Trash</span>
+        <span class="count" *ngIf="trashedCount > 0" [@countFadeIn]>{{ trashedCount }}</span>
+      </a>
+    </nav>
+  </div>
+</div>

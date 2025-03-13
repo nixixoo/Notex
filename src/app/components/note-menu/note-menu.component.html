@@ -1,0 +1,42 @@
+<div class="note-menu-container" (clickOutside)="closeMenu()">
+    <button class="menu-button" (click)="toggleMenu($event)">
+      <mat-icon>more_vert</mat-icon>
+    </button>
+    
+    <div *ngIf="isOpen" class="menu-dropdown" [@fadeIn]>
+      <ng-container *ngIf="note.status === 'active' || !note.status">
+        <button class="menu-item" (click)="onArchive($event)">
+          <mat-icon>archive</mat-icon>
+          <span>Archive</span>
+        </button>
+        <button class="menu-item" (click)="onTrash($event)">
+          <mat-icon>delete</mat-icon>
+          <span>Move to Trash</span>
+        </button>
+      </ng-container>
+      
+      <ng-container *ngIf="note.status === 'archived'">
+        <button class="menu-item" (click)="onRestore($event)">
+          <mat-icon>unarchive</mat-icon>
+          <span>Unarchive</span>
+        </button>
+        <button class="menu-item" (click)="onTrash($event)">
+          <mat-icon>delete</mat-icon>
+          <span>Move to Trash</span>
+        </button>
+      </ng-container>
+      
+      <ng-container *ngIf="note.status === 'trashed'">
+        <button class="menu-item" (click)="onRestore($event)">
+          <mat-icon>restore</mat-icon>
+          <span>Restore</span>
+        </button>
+        <button class="menu-item delete" (click)="onDelete($event)">
+          <mat-icon>delete_forever</mat-icon>
+          <span>Delete Forever</span>
+        </button>
+      </ng-container>
+    </div>
+  </div>
+  
+  
