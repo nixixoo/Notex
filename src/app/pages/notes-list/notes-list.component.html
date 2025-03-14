@@ -1,9 +1,9 @@
 <div class="page-layout">
   <app-sidebar 
-  [activeCount]="activeCount" 
-  [archivedCount]="archivedCount" 
-  [trashedCount]="trashedCount">
-</app-sidebar>
+    [activeCount]="activeCount" 
+    [archivedCount]="archivedCount" 
+    [trashedCount]="trashedCount">
+  </app-sidebar>
   
   <div class="main-content">
     <div *ngIf="authService.isGuestMode()" class="guest-banner">
@@ -17,16 +17,12 @@
       <div class="notes-header">
         <h1 class="notes-title">{{ getPageTitle() }}</h1>
         <div class="header-controls">
-          <!-- Only show preview toggle and add note button on active notes -->
           <ng-container *ngIf="currentStatus === 'active'">
             <label class="switch">
               <input type="checkbox" [(ngModel)]="showPreview">
               <span class="slider round"></span>
             </label>
             <span class="preview-label">Show Preview</span>
-            <button class="add-note-btn" (click)="toggleNewNoteForm()">
-              {{ showNewNoteForm ? 'Cancel' : 'Add Note' }}
-            </button>
           </ng-container>
         </div>
       </div>
@@ -72,13 +68,34 @@
         <p>Loading notes...</p>
       </div>
       
-      <div *ngIf="!isLoadingNotes && showEmptyMessage" class="empty-notes">
-        <p *ngIf="currentStatus === 'active'">You don't have any notes yet. Create your first note!</p>
-        <p *ngIf="currentStatus === 'archived'">You don't have any archived notes.</p>
-        <p *ngIf="currentStatus === 'trashed'">Your trash is empty.</p>
-      </div>
+      <!-- Empty states for archive/trash -->
+      <!-- Empty states for archive/trash -->
+<div *ngIf="!isLoadingNotes && notes.length === 0 && currentStatus !== 'active'" 
+class="empty-notes"
+[@fadeInOut]>
+<p *ngIf="currentStatus === 'archived'">You don't have any archived notes.</p>
+<p *ngIf="currentStatus === 'trashed'">Your trash is empty.</p>
+</div>
       
-      <div *ngIf="!isLoadingNotes && notes.length > 0" class="notes-grid" [@listAnimation]="notes.length">
+      <!-- Notes grid (always shown for active, even when empty) -->
+      <div *ngIf="!isLoadingNotes && (currentStatus === 'active' || notes.length > 0)" 
+           class="notes-grid" 
+           [@listAnimation]="notes.length">
+        
+        <!-- New Note Card (only for active status) -->
+        <!-- New Note Card -->
+<div *ngIf="currentStatus === 'active'"
+class="note-card add-note-card"
+[class.centered-empty]="notes.length === 0"
+(click)="toggleNewNoteForm()"
+[@fadeInOut]>
+<div class="add-note-content">
+<mat-icon class="add-icon">note_add</mat-icon>
+<span class="add-text">New Note</span>
+</div>
+</div>
+        
+        <!-- Existing Notes -->
         <div *ngFor="let note of notes; trackBy: trackNoteById" class="note-card">
           <div class="note-card-content" [routerLink]="['/notes', note.id]">
             <h2 class="note-title">{{ note.title }}</h2>
@@ -104,4 +121,3 @@
     </div>
   </div>
 </div>
-
