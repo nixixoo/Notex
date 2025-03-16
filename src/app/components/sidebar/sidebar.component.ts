@@ -26,6 +26,7 @@ export class SidebarComponent {
   @Input() activeCount = 0;
   @Input() archivedCount = 0;
   @Input() trashedCount = 0;
+  @Input() groupCount = 0;
   
   constructor(public sidebarService: SidebarService) {}
 

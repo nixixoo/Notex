@@ -1,0 +1,143 @@
+<div class="page-layout">
+  <app-sidebar 
+    [activeCount]="activeCount"
+    [archivedCount]="archivedCount"
+    [trashedCount]="trashedCount"
+    [groupCount]="groupCount">
+  </app-sidebar>
+  
+  <div class="main-content">
+    <div class="notes-container">
+      <!-- Loading Spinner for Group -->
+      <div *ngIf="isLoadingGroup" class="loading-container">
+        <div class="loading-spinner"></div>
+        <p>Loading group...</p>
+      </div>
+
+      <!-- Group Header -->
+      <div *ngIf="!isLoadingGroup && group" class="notes-header" [@fadeInOut]>
+        <div class="header-left">
+          <button class="back-button" routerLink="/groups">
+            <mat-icon>arrow_back</mat-icon>
+          </button>
+          <h1 class="notes-title">{{ group.name }}</h1>
+        </div>
+        <div class="header-controls">
+          <button class="add-note-btn" (click)="toggleNewNoteForm()">
+            <mat-icon>add</mat-icon> Add Note
+          </button>
+        </div>
+      </div>
+
+      <!-- New Note Form -->
+      <div *ngIf="showNewNoteForm" class="new-note-form-container" [@slideDown]>
+        <form [formGroup]="newNoteForm" (ngSubmit)="createNote()" class="new-note-form">
+          <div class="form-group">
+            <label for="title">Title</label>
+            <input 
+              type="text" 
+              id="title" 
+              formControlName="title" 
+              class="form-control"
+              [class.is-invalid]="title?.invalid && (title?.dirty || title?.touched)"
+            >
+            <div *ngIf="title?.invalid && (title?.dirty || title?.touched)" class="error-message">
+              <span *ngIf="title?.errors?.['required']">Title is required</span>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="subtitle">Subtitle</label>
+            <input 
+              type="text" 
+              id="subtitle" 
+              formControlName="subtitle" 
+              class="form-control"
+              [class.is-invalid]="subtitle?.invalid && (subtitle?.dirty || subtitle?.touched)"
+            >
+            <div *ngIf="subtitle?.invalid && (subtitle?.dirty || subtitle?.touched)" class="error-message">
+              <span *ngIf="subtitle?.errors?.['required']">Subtitle is required</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="content">Content</label>
+            <textarea 
+              id="content" 
+              formControlName="content" 
+              class="form-control"
+              rows="5"
+            ></textarea>
+          </div>
+          
+          <button type="submit" class="submit-btn" [disabled]="newNoteForm.invalid || isLoading">
+            {{ isLoading ? 'Creating...' : 'Create Note' }}
+          </button>
+        </form>
+      </div>
+
+      <!-- Loading Spinner for Notes -->
+      <div *ngIf="!isLoadingGroup && isLoadingNotes" class="loading-container">
+        <div class="loading-spinner"></div>
+        <p>Loading notes...</p>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="!isLoadingGroup && !isLoadingNotes && notes.length === 0" class="empty-notes" [@fadeInOut]>
+        <mat-icon>note_off</mat-icon>
+        <p>No notes in this group yet.</p>
+        <p>Add a note to get started.</p>
+      </div>
+
+      <!-- Notes grid -->
+      <div *ngIf="!isLoadingGroup && !isLoadingNotes" 
+           class="notes-grid" 
+           [@listAnimation]="notes.length">
+        
+        <!-- New Note Card -->
+        <div class="note-card add-note-card"
+             [class.centered-empty]="notes.length === 0"
+             (click)="toggleNewNoteForm()"
+             [@fadeInOut]>
+          <div class="add-note-content">
+            <mat-icon class="add-icon">note_add</mat-icon>
+            <span class="add-text">New Note</span>
+          </div>
+        </div>
+        
+        <!-- Existing Notes -->
+        <div *ngFor="let note of notes; trackBy: trackNoteById" class="note-card">
+          <div class="note-card-content" [routerLink]="['/notes', note.id]">
+            <h2 class="note-title">{{ note.title }}</h2>
+            <p class="note-subtitle">{{ note.subtitle }}</p>
+            <div *ngIf="showPreview && note.content" class="note-preview-container" [@previewExpand]>
+              <pre class="note-preview">{{ note.content | previewFormat }}</pre>
+            </div>
+            <div class="note-footer">
+              <span class="note-date">{{ note.updatedAt | date:'medium' }}</span>
+            </div>
+          </div>
+          <div class="note-menu" (click)="stopPropagation($event)">
+            <button mat-icon-button [matMenuTriggerFor]="menu" class="menu-button">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #menu="matMenu">
+              <button mat-menu-item (click)="removeFromGroup(note)">
+                <mat-icon>folder_off</mat-icon>
+                <span>Remove from Group</span>
+              </button>
+              <button mat-menu-item (click)="onArchive(note)">
+                <mat-icon>archive</mat-icon>
+                <span>Archive</span>
+              </button>
+              <button mat-menu-item (click)="onTrash(note)">
+                <mat-icon>delete</mat-icon>
+                <span>Move to Trash</span>
+              </button>
+            </mat-menu>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

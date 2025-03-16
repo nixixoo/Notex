@@ -1,0 +1,116 @@
+<div class="page-layout">
+  <app-sidebar 
+    [activeCount]="activeCount" 
+    [archivedCount]="archivedCount" 
+    [trashedCount]="trashedCount"
+    [groupCount]="groupCount">
+  </app-sidebar>
+  
+  <div class="main-content" [@fadeIn]>
+    <div *ngIf="authService.isGuestMode()" class="guest-banner" [@fadeIn]>
+      <span>You're using guest mode. Groups will be saved locally.</span>
+      <button (click)="convertToPermanentAccount()" class="guest-btn">
+        Create Permanent Account
+      </button>
+    </div>
+
+    <div class="groups-container">
+      <div class="groups-header">
+        <h1 class="groups-title">My Groups</h1>
+      </div>
+      
+      <div *ngIf="showNewGroupForm" class="new-group-form-container" [@slideDown]>
+        <form [formGroup]="newGroupForm" (ngSubmit)="createGroup()" class="new-group-form">
+          <div class="form-group">
+            <label for="name">Group Name</label>
+            <input 
+              type="text" 
+              id="name" 
+              formControlName="name" 
+              class="form-control"
+              [class.is-invalid]="name?.invalid && (name?.dirty || name?.touched)"
+              placeholder="Enter group name"
+            >
+            <div *ngIf="name?.invalid && (name?.dirty || name?.touched)" class="error-message">
+              <span *ngIf="name?.errors?.['required']">Group name is required</span>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="description">Description</label>
+            <textarea 
+              id="description" 
+              formControlName="description" 
+              class="form-control"
+              [class.is-invalid]="description?.invalid && (description?.dirty || description?.touched)"
+              placeholder="Enter group description"
+              rows="3"
+            ></textarea>
+            <div *ngIf="description?.invalid && (description?.dirty || description?.touched)" class="error-message">
+              <span *ngIf="description?.errors?.['required']">Group description is required</span>
+            </div>
+          </div>
+          
+          <div class="form-actions">
+            <button type="button" class="cancel-btn" (click)="toggleNewGroupForm()">Cancel</button>
+            <button type="submit" class="submit-btn" [disabled]="newGroupForm.invalid || isLoading">
+              {{ isLoading ? 'Creating...' : 'Create Group' }}
+            </button>
+          </div>
+        </form>
+      </div>
+      
+      <div *ngIf="isLoading" class="loading-container" [@fadeIn]>
+        <div class="loading-spinner"></div>
+        <p>Loading groups...</p>
+      </div>
+      
+      <!-- Empty State -->
+      <div *ngIf="!isLoading && groups.length === 0" class="groups-grid">
+        <!-- New Group Card -->
+        <div *ngIf="showEmptyMessage" class="group-card add-group-card centered-empty"
+             (click)="toggleNewGroupForm()"
+             [@fadeIn]>
+          <div class="add-group-content">
+            <mat-icon class="add-group-icon">create_new_folder</mat-icon>
+            <span class="add-text">New Group</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Groups grid -->
+      <div *ngIf="!isLoading && groups.length > 0" 
+           class="groups-grid" 
+           [@listAnimation]="groups.length">
+        
+        <!-- New Group Card -->
+        <div class="group-card add-group-card"
+             (click)="toggleNewGroupForm()"
+             [@fadeIn]>
+          <div class="add-group-content">
+            <mat-icon class="add-group-icon">create_new_folder</mat-icon>
+            <span class="add-text">New Group</span>
+          </div>
+        </div>
+        
+        <!-- Existing Groups -->
+        <div *ngFor="let group of groups; trackBy: trackGroupById" 
+             class="group-card">
+          <div class="group-card-content" [routerLink]="['/groups', group.id]">
+            <h2 class="group-name">{{ group.name }}</h2>
+            <p class="group-description">{{ group.description }}</p>
+            <div class="group-meta">
+              <span class="group-date">{{ group.updatedAt | date:'medium' }}</span>
+            </div>
+          </div>
+          <div class="group-menu" (click)="stopPropagation($event)">
+            <app-group-menu 
+              [group]="group"
+              (delete)="deleteGroup($event)">
+            </app-group-menu>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

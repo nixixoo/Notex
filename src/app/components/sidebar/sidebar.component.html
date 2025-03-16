@@ -21,6 +21,15 @@
         <span class="count" *ngIf="activeCount > 0" [@countFadeIn]>{{ activeCount }}</span>
       </a>
       
+      <a routerLink="/groups" 
+         routerLinkActive="active" 
+         class="nav-item"
+         (click)="handleNavClick($event)">
+        <mat-icon>folder</mat-icon>
+        <span>Groups</span>
+        <span class="count" *ngIf="groupCount > 0" [@countFadeIn]>{{ groupCount }}</span>
+      </a>
+      
       <a routerLink="/notes/archived" 
          routerLinkActive="active" 
          class="nav-item"

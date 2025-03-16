@@ -36,6 +36,7 @@ export class NotesService {
           updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
           userId TEXT NOT NULL,
           status TEXT DEFAULT 'active',
+          groupId TEXT,
           FOREIGN KEY(userId) REFERENCES users(id) ON DELETE CASCADE
         )
       `)
@@ -70,7 +71,7 @@ export class NotesService {
   getNotes(status: "active" | "archived" | "trashed" = "active"): Observable<Note[]> {
     if (this.authService.isGuestMode()) {
       const notes = this.getLocalNotes().filter(
-        (note) => note.status === status || (!note.status && status === "active"),
+        (note) => (note.status === status || (!note.status && status === "active")) && !note.groupId,
       )
       return of(notes)
     }
@@ -81,7 +82,7 @@ export class NotesService {
 
       return from(
         this.client.execute({
-          sql: "SELECT * FROM notes WHERE userId = ? AND status = ? ORDER BY updatedAt DESC",
+          sql: "SELECT * FROM notes WHERE userId = ? AND status = ? AND (groupId IS NULL OR groupId = '') ORDER BY updatedAt DESC",
           args: [userId, status],
         }),
       ).pipe(
@@ -93,7 +94,7 @@ export class NotesService {
       )
     } else {
       const notes = this.getLocalNotes()
-        .filter((note) => note.status === status || (!note.status && status === "active"))
+        .filter((note) => (note.status === status || (!note.status && status === "active")) && !note.groupId)
         .map((note) => ({
           ...note,
           createdAt: new Date(note.createdAt),
@@ -154,6 +155,7 @@ export class NotesService {
         userId: this.GUEST_USER_ID,
         status: "active",
         isLocal: true,
+        groupId: noteData.groupId
       }
 
       // Update local storage
@@ -188,12 +190,13 @@ export class NotesService {
         updatedAt: new Date(now),
         userId: currentUser.id,
         status: "active",
+        groupId: noteData.groupId
       }
 
       return from(
         this.client.execute({
-          sql: "INSERT INTO notes (id, title, subtitle, content, createdAt, updatedAt, userId, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-          args: [id, noteData.title, noteData.subtitle, newNote.content, now, now, currentUser.id, "active"],
+          sql: "INSERT INTO notes (id, title, subtitle, content, createdAt, updatedAt, userId, status, groupId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          args: [id, noteData.title, noteData.subtitle, newNote.content, now, now, currentUser.id, "active", noteData.groupId || null],
         }),
       ).pipe(
         map(() => {
@@ -271,6 +274,11 @@ export class NotesService {
       args.push(noteData.status)
     }
 
+    if (noteData.groupId !== undefined) {
+      sql += `, groupId = ?`
+      args.push(noteData.groupId || null)
+    }
+
     sql += ` WHERE id = ? AND userId = ?`
     args.push(id, userId)
 
@@ -295,6 +303,7 @@ export class NotesService {
           ...(noteData.subtitle !== undefined && { subtitle: noteData.subtitle }),
           ...(noteData.content !== undefined && { content: noteData.content }),
           ...(noteData.status !== undefined && { status: noteData.status }),
+          ...(noteData.groupId !== undefined && { groupId: noteData.groupId }),
           updatedAt,
         }
       
@@ -370,6 +379,7 @@ export class NotesService {
       updatedAt: new Date(row["updatedAt"] as string),
       userId: row["userId"] as string,
       status: ((row["status"] as string) || "active") as "active" | "archived" | "trashed",
+      groupId: (row["groupId"] as string) || undefined,
     }
   }
 
@@ -377,9 +387,9 @@ export class NotesService {
     if (this.authService.isGuestMode()) {
       const notes = this.getLocalNotes()
       const counts = {
-        active: notes.filter((n) => n.status === "active" || !n.status).length,
-        archived: notes.filter((n) => n.status === "archived").length,
-        trashed: notes.filter((n) => n.status === "trashed").length,
+        active: notes.filter((n) => (n.status === "active" || !n.status) && !n.groupId).length,
+        archived: notes.filter((n) => n.status === "archived" && !n.groupId).length,
+        trashed: notes.filter((n) => n.status === "trashed" && !n.groupId).length,
       }
       return of(counts)
     }
@@ -393,9 +403,9 @@ export class NotesService {
           sql: `
           SELECT status, COUNT(*) as count 
           FROM notes 
-          WHERE userId = ? 
+          WHERE userId = ? AND (groupId IS NULL OR groupId = '')
           GROUP BY status
-        `,
+          `,
           args: [userId],
         }),
       ).pipe(
@@ -407,18 +417,14 @@ export class NotesService {
           }
 
           result.rows.forEach((row) => {
-            const status = row["status"] as string
-            const count = Number(row["count"])
-
-            if (status === "active" || !status) counts.active += count
-            else if (status === "archived") counts.archived += count
-            else if (status === "trashed") counts.trashed += count
+            const status = (row["status"] as string) || "active"
+            counts[status as keyof typeof counts] = Number(row["count"])
           })
 
           return counts
         }),
         catchError((error) => {
-          console.error("Error fetching note counts:", error)
+          console.error("Error getting notes count:", error)
           return of({ active: 0, archived: 0, trashed: 0 })
         }),
       )
@@ -427,4 +433,3 @@ export class NotesService {
     return of({ active: 0, archived: 0, trashed: 0 })
   }
 }
-

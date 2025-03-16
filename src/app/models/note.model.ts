@@ -6,8 +6,9 @@ export interface Note {
   createdAt: Date
   updatedAt: Date
   userId: string
-  isLocal?: boolean // Add this line
+  isLocal?: boolean 
   status?: "active" | "archived" | "trashed"
+  groupId?: string 
 }
 
 export interface CreateNoteRequest {
@@ -15,6 +16,7 @@ export interface CreateNoteRequest {
   subtitle: string
   content?: string
   userId?: string
+  groupId?: string 
 }
 
 export interface UpdateNoteRequest {
@@ -22,5 +24,5 @@ export interface UpdateNoteRequest {
   subtitle?: string
   content?: string
   status?: "active" | "archived" | "trashed"
+  groupId?: string 
 }
-
