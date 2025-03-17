@@ -1,77 +1,106 @@
-<div class="editor-container">
+<div class="page-layout">
+  <app-sidebar 
+    [activeCount]="activeCount"
+    [archivedCount]="archivedCount"
+    [trashedCount]="trashedCount"
+    [groupCount]="groupCount">
+  </app-sidebar>
+
+  <div class="editor-container">
+    <div *ngIf="authService.isGuestMode()" class="guest-banner">
+      <span>You're using guest mode. Notes will be saved locally.</span>
+      <button (click)="convertToPermanentAccount()" class="guest-btn">
+        Create Permanent Account
+      </button>
+    </div>
+
     <div class="editor-header">
-      <button class="back-btn" (click)="goBack()">← Back to Notes</button>
+      <button class="back-btn" (click)="location.back()">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
       <div class="editor-actions">
-        <button class="save-btn" [disabled]="noteForm.invalid || isSaving" (click)="saveNote()">
+        <button class="save-btn" (click)="saveNote()" [disabled]="noteForm.invalid || isSaving">
           {{ isSaving ? 'Saving...' : 'Save' }}
         </button>
       </div>
     </div>
-    
+
     <div *ngIf="isLoading" class="loading-container">
       <div class="loading-spinner"></div>
       <p>Loading note...</p>
     </div>
-    
+
     <div *ngIf="!isLoading && !note" class="note-not-found">
-      <p>Note not found or you don't have permission to view it.</p>
-      <button class="back-btn" (click)="goBack()">Back to Notes</button>
+      <p>Note not found</p>
+      <button class="back-btn" (click)="location.back()">Go Back</button>
     </div>
-    
-    <form *ngIf="!isLoading && note" [formGroup]="noteForm" class="note-form">
-      <div class="form-group title-group">
+
+    <form *ngIf="!isLoading && note" [formGroup]="noteForm" class="note-form" [@fadeIn]>
+      <div class="form-group">
         <div class="input-wrapper">
-          <input 
-            type="text" 
-            formControlName="title" 
+          <input
+            type="text"
+            formControlName="title"
             class="title-input"
             [class.is-invalid]="title?.invalid && (title?.dirty || title?.touched)"
-            placeholder="Title"
-            maxlength="75"
+            placeholder="Note Title"
+            [maxlength]="TITLE_MAX_LENGTH"
           >
-          <div class="character-counter" 
-     [class.warning]="titleLengthWarning"
-     [class.danger]="title?.value?.length === 75">
-  {{ title?.value?.length || 0 }}/75
-</div>
-        <div *ngIf="title?.invalid && (title?.dirty || title?.touched)" class="error-message">
-          <span *ngIf="title?.errors?.['required']">Title is required</span>
-          <span *ngIf="title?.errors?.['maxlength']">Maximum 75 characters</span>
         </div>
+        <div class="feedback-container">
+          <div class="feedback-left">
+            <div *ngIf="title?.invalid && (title?.dirty || title?.touched)" class="error-message">
+              <span *ngIf="title?.errors?.['required']">Title is required</span>
+              <span *ngIf="title?.errors?.['maxlength']">Title cannot exceed 75 characters</span>
+            </div>
+          </div>
+          <span class="character-counter" 
+                [class.warning]="titleLengthWarning"
+                [class.danger]="titleLengthDanger">
+            {{ title?.value?.length || 0 }}/{{ TITLE_MAX_LENGTH }}
+          </span>
         </div>
       </div>
-      
-      <div class="form-group subtitle-group">
+
+      <div class="form-group">
         <div class="input-wrapper">
-        <input 
-          type="text" 
-          formControlName="subtitle" 
-          class="subtitle-input"
-          [class.is-invalid]="subtitle?.invalid && (subtitle?.dirty || subtitle?.touched)"
-          placeholder="Subtitle"
-          maxlength="150"
-        >
-        <div class="character-counter" 
-     [class.warning]="subtitleLengthWarning"
-     [class.danger]="subtitle?.value?.length === 150">
-  {{ subtitle?.value?.length || 0 }}/150
-</div>
-        <div *ngIf="subtitle?.invalid && (subtitle?.dirty || subtitle?.touched)" class="error-message">
-          <span *ngIf="subtitle?.errors?.['required']">Subtitle is required</span>
-          <span *ngIf="subtitle?.errors?.['maxlength']">Maximum 150 characters</span>
+          <input
+            type="text"
+            formControlName="subtitle"
+            class="subtitle-input"
+            [class.is-invalid]="subtitle?.invalid && (subtitle?.dirty || subtitle?.touched)"
+            placeholder="Note Subtitle"
+            [maxlength]="SUBTITLE_MAX_LENGTH"
+          >
+        </div>
+        <div class="feedback-container">
+          <div class="feedback-left">
+            <div *ngIf="subtitle?.invalid && (subtitle?.dirty || subtitle?.touched)" class="error-message">
+              <span *ngIf="subtitle?.errors?.['required']">Subtitle is required</span>
+              <span *ngIf="subtitle?.errors?.['maxlength']">Subtitle cannot exceed 150 characters</span>
+            </div>
+          </div>
+          <span class="character-counter" 
+                [class.warning]="subtitleLengthWarning"
+                [class.danger]="subtitleLengthDanger">
+            {{ subtitle?.value?.length || 0 }}/{{ SUBTITLE_MAX_LENGTH }}
+          </span>
         </div>
       </div>
-      </div>
-      
-      <div class="form-group content-group">
-        <textarea 
-          formControlName="content" 
+
+      <div class="form-group">
+        <textarea
+          formControlName="content"
           class="content-input"
+          [class.is-invalid]="noteForm.get('content')?.invalid && (noteForm.get('content')?.dirty || noteForm.get('content')?.touched)"
           placeholder="Write your note here..."
-          rows="15"
         ></textarea>
+        <div class="feedback-container">
+          <div *ngIf="noteForm.get('content')?.invalid && (noteForm.get('content')?.dirty || noteForm.get('content')?.touched)" class="error-message">
+            <span *ngIf="noteForm.get('content')?.errors?.['required']">Content is required</span>
+          </div>
+        </div>
       </div>
     </form>
   </div>
-  
-  
+</div>

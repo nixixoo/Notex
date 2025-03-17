@@ -8,7 +8,7 @@ export interface Note {
   userId: string
   isLocal?: boolean 
   status?: "active" | "archived" | "trashed"
-  groupId?: string 
+  groupId?: string | null
 }
 
 export interface CreateNoteRequest {
@@ -16,7 +16,7 @@ export interface CreateNoteRequest {
   subtitle: string
   content?: string
   userId?: string
-  groupId?: string 
+  groupId?: string | null
 }
 
 export interface UpdateNoteRequest {
@@ -24,5 +24,5 @@ export interface UpdateNoteRequest {
   subtitle?: string
   content?: string
   status?: "active" | "archived" | "trashed"
-  groupId?: string 
+  groupId?: string | null
 }

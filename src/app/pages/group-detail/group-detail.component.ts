@@ -1,246 +1,370 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
-import { MatIconModule } from '@angular/material/icon';
-import { MatMenuModule } from '@angular/material/menu';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
-import { trigger, transition, style, animate } from '@angular/animations';
-import { GroupsService } from '../../services/groups.service';
-import { NotesService } from '../../services/notes.service';
-import { AuthService } from '../../services/auth.service';
-import { SidebarComponent } from '../../components/sidebar/sidebar.component';
-import { PreviewFormatPipe } from '../../pipes/preview-format.pipe';
-import { Group } from '../../models/group.model';
-import { Note } from '../../models/note.model';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Component, OnInit, OnDestroy } from "@angular/core"
+import { CommonModule } from "@angular/common"
+import { ActivatedRoute, Router, RouterModule } from "@angular/router"
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from "@angular/forms"
+import { MatIconModule } from "@angular/material/icon"
+import { Subscription } from "rxjs"
+import { trigger, transition, style, animate, query, stagger } from "@angular/animations"
+import { GroupsService } from "../../services/groups.service"
+import { NotesService } from "../../services/notes.service"
+import { AuthService } from "../../services/auth.service"
+import { SidebarService } from "../../services/sidebar.service"
+import { SidebarComponent } from "../../components/sidebar/sidebar.component"
+import { PreviewFormatPipe } from "../../pipes/preview-format.pipe"
+import { Group } from "../../models/group.model"
+import { Note, UpdateNoteRequest, CreateNoteRequest } from "../../models/note.model"
+import { NoteGroupMenuComponent } from "../../components/note-group-menu/note-group-menu.component"
 
 @Component({
-  selector: 'app-group-detail',
+  selector: "app-group-detail",
+  templateUrl: "./group-detail.component.html",
+  styleUrls: ["./group-detail.component.scss"],
   standalone: true,
   imports: [
     CommonModule,
     RouterModule,
     MatIconModule,
-    MatMenuModule,
     ReactiveFormsModule,
     FormsModule,
     SidebarComponent,
-    PreviewFormatPipe
+    PreviewFormatPipe,
+    NoteGroupMenuComponent
   ],
-  templateUrl: './group-detail.component.html',
-  styleUrls: ['./group-detail.component.scss'],
   animations: [
-    trigger('fadeInOut', [
-      transition(':enter', [
+    trigger("fadeInOut", [
+      transition(":enter", [
         style({ opacity: 0 }),
-        animate('200ms', style({ opacity: 1 }))
+        animate("0.3s ease-in", style({ opacity: 1 })),
       ]),
-      transition(':leave', [
-        animate('200ms', style({ opacity: 0 }))
-      ])
-    ]),
-    trigger('slideDown', [
-      transition(':enter', [
-        style({ transform: 'translateY(-20px)', opacity: 0 }),
-        animate('200ms ease-out', style({ transform: 'translateY(0)', opacity: 1 }))
+      transition(":leave", [
+        animate("0.3s ease-out", style({ opacity: 0 })),
       ]),
-      transition(':leave', [
-        animate('200ms ease-in', style({ transform: 'translateY(-20px)', opacity: 0 }))
-      ])
     ]),
-    trigger('listAnimation', [
-      transition(':enter', [
-        style({ opacity: 0, transform: 'translateY(10px)' }),
-        animate('200ms ease-out', style({ opacity: 1, transform: 'translateY(0)' }))
-      ])
-    ]),
-    trigger('previewExpand', [
-      transition(':enter', [
-        style({ height: 0, opacity: 0 }),
-        animate('200ms ease-out', style({ height: '*', opacity: 1 }))
+    trigger("listAnimation", [
+      transition("* => *", [
+        query(":enter", [
+          style({ opacity: 0, transform: "translateY(15px)" }),
+          stagger(50, [
+            animate("0.3s ease-out", style({ opacity: 1, transform: "translateY(0)" })),
+          ]),
+        ], { optional: true }),
       ]),
-      transition(':leave', [
-        animate('200ms ease-in', style({ height: 0, opacity: 0 }))
-      ])
-    ])
-  ]
+    ]),
+    trigger("previewExpand", [
+      transition(":enter", [
+        style({ opacity: 0, height: 0, overflow: "hidden" }),
+        animate("0.3s ease-out", style({ opacity: 1, height: "*" })),
+      ]),
+      transition(":leave", [
+        style({ opacity: 1, height: "*", overflow: "hidden" }),
+        animate("0.3s ease-in", style({ opacity: 0, height: 0 })),
+      ]),
+    ]),
+    trigger("slideDown", [
+      transition(":enter", [
+        style({ opacity: 0, height: 0, overflow: "hidden" }),
+        animate("0.3s ease-out", style({ opacity: 1, height: "*" })),
+      ]),
+      transition(":leave", [
+        style({ opacity: 1, height: "*", overflow: "hidden" }),
+        animate("0.3s ease-in", style({ opacity: 0, height: 0 })),
+      ]),
+    ]),
+  ],
 })
-export class GroupDetailComponent implements OnInit {
+export class GroupDetailComponent implements OnInit, OnDestroy {
   group: Group | null = null;
   notes: Note[] = [];
+  showPreview = false;
+  showNewNoteForm = false;
+  isLoading = false;
   isLoadingGroup = false;
   isLoadingNotes = false;
-  isLoading = false;
-  showNewNoteForm = false;
-  showPreview = true;
-  newNoteForm: FormGroup;
-  
-  // Sidebar counts
   activeCount = 0;
   archivedCount = 0;
   trashedCount = 0;
   groupCount = 0;
+  private subscriptions: Subscription[] = [];
+  newNoteForm: FormGroup;
+  titleLengthWarning = false;
+  titleLengthDanger = false;
+  subtitleLengthWarning = false;
+  subtitleLengthDanger = false;
+
+  readonly TITLE_MAX_LENGTH = 75;
+  readonly SUBTITLE_MAX_LENGTH = 150;
 
   constructor(
+    private route: ActivatedRoute,
+    private router: Router,
     private groupsService: GroupsService,
     private notesService: NotesService,
     public authService: AuthService,
-    private fb: FormBuilder,
-    private route: ActivatedRoute,
-    private router: Router
+    private sidebarService: SidebarService,
+    private fb: FormBuilder
   ) {
     this.newNoteForm = this.fb.group({
-      title: ['', [Validators.required]],
-      subtitle: ['', [Validators.required]],
+      title: ['', [
+        Validators.required,
+        Validators.maxLength(this.TITLE_MAX_LENGTH)
+      ]],
+      subtitle: ['', [
+        Validators.required,
+        Validators.maxLength(this.SUBTITLE_MAX_LENGTH)
+      ]],
       content: ['']
     });
-  }
 
-  ngOnInit() {
-    this.route.params.subscribe(params => {
-      if (params['id']) {
-        this.loadGroup(params['id']);
-        this.loadNotes(params['id']);
-      }
-    });
-    this.loadNoteCounts();
-  }
-
-  loadGroup(groupId: string) {
-    this.isLoadingGroup = true;
-    this.groupsService.getGroupById(groupId).subscribe({
-      next: (group: Group) => {
-        this.group = group;
-        this.isLoadingGroup = false;
-      },
-      error: (error: Error) => {
-        console.error('Error loading group:', error);
-        this.isLoadingGroup = false;
-        this.router.navigate(['/groups']);
-      }
-    });
-  }
-
-  loadNotes(groupId: string) {
-    this.isLoadingNotes = true;
-    // According to the memory, GroupsService handles fetching notes within groups
-    this.groupsService.getNotesInGroup(groupId).subscribe({
-      next: (notes: Note[]) => {
-        this.notes = notes;
-        this.isLoadingNotes = false;
-      },
-      error: (error: Error) => {
-        console.error('Error loading notes:', error);
-        this.isLoadingNotes = false;
-      }
-    });
-  }
-
-  loadNoteCounts() {
-    this.notesService.getNotesCount().subscribe({
-      next: (counts: { active: number; archived: number; trashed: number }) => {
-        this.activeCount = counts.active;
-        this.archivedCount = counts.archived;
-        this.trashedCount = counts.trashed;
-      },
-      error: (error: Error) => {
-        console.error('Error loading note counts:', error);
-      }
-    });
-
-    this.groupsService.getGroups().subscribe({
-      next: (groups: Group[]) => {
-        this.groupCount = groups.length;
-      },
-      error: (error: Error) => {
-        console.error('Error loading group count:', error);
-      }
-    });
-  }
-
-  toggleNewNoteForm() {
-    this.showNewNoteForm = !this.showNewNoteForm;
-    if (!this.showNewNoteForm) {
-      this.newNoteForm.reset();
-    }
-  }
-
-  createNote() {
-    if (this.newNoteForm.valid && this.group) {
-      this.isLoading = true;
-      const noteData = {
-        ...this.newNoteForm.value,
-        groupId: this.group.id
-      };
+    // Monitor title and subtitle length
+    this.title?.valueChanges.subscribe((value: string) => {
+      const length = value?.length || 0
+      this.titleLengthWarning = length >= Math.floor(this.TITLE_MAX_LENGTH * 0.85) && length < this.TITLE_MAX_LENGTH
+      this.titleLengthDanger = length >= this.TITLE_MAX_LENGTH
       
-      this.notesService.createNote(noteData).subscribe({
-        next: (note: Note) => {
-          this.notes = [note, ...this.notes];
-          this.showNewNoteForm = false;
-          this.newNoteForm.reset();
-          this.isLoading = false;
-          this.loadNoteCounts();
+      // Enforce max length by truncating
+      if (length > this.TITLE_MAX_LENGTH) {
+        this.title?.setValue(value.slice(0, this.TITLE_MAX_LENGTH), { emitEvent: false })
+      }
+    })
+
+    this.subtitle?.valueChanges.subscribe((value: string) => {
+      const length = value?.length || 0
+      this.subtitleLengthWarning = length >= Math.floor(this.SUBTITLE_MAX_LENGTH * 0.85) && length < this.SUBTITLE_MAX_LENGTH
+      this.subtitleLengthDanger = length >= this.SUBTITLE_MAX_LENGTH
+      
+      // Enforce max length by truncating
+      if (length > this.SUBTITLE_MAX_LENGTH) {
+        this.subtitle?.setValue(value.slice(0, this.SUBTITLE_MAX_LENGTH), { emitEvent: false })
+      }
+    })
+  }
+
+  ngOnInit(): void {
+    this.loadGroup()
+    this.loadCounts()
+  }
+
+  loadGroup(): void {
+    this.isLoadingGroup = true
+    const groupId = this.route.snapshot.paramMap.get("id")
+
+    if (!groupId) {
+      this.router.navigate(["/groups"])
+      return
+    }
+
+    this.subscriptions.push(
+      this.groupsService.getGroupById(groupId).subscribe({
+        next: (group) => {
+          this.group = group
+          this.isLoadingGroup = false
+          this.loadNotesForGroup(groupId)
         },
-        error: (error: Error) => {
-          console.error('Error creating note:', error);
-          this.isLoading = false;
+        error: (error) => {
+          console.error("Error loading group:", error)
+          this.isLoadingGroup = false
+          this.router.navigate(["/groups"])
         }
-      });
+      })
+    )
+  }
+
+  loadNotesForGroup(groupId: string): void {
+    this.isLoadingNotes = true
+
+    this.subscriptions.push(
+      this.groupsService.getNotesInGroup(groupId).subscribe({
+        next: (notes) => {
+          this.notes = notes
+          this.isLoadingNotes = false
+        },
+        error: (error) => {
+          console.error("Error loading notes for group:", error)
+          this.isLoadingNotes = false
+        }
+      })
+    )
+  }
+
+  loadCounts(): void {
+    this.subscriptions.push(
+      this.notesService.getNotesCount().subscribe(counts => {
+        this.activeCount = counts.active
+        this.archivedCount = counts.archived
+        this.trashedCount = counts.trashed
+      })
+    )
+
+    this.subscriptions.push(
+      this.groupsService.getGroups().subscribe(groups => {
+        this.groupCount = groups.length
+      })
+    )
+  }
+
+  toggleNewNoteForm(): void {
+    if (this.showNewNoteForm) {
+      this.showNewNoteForm = false;
+      this.newNoteForm.reset();
+    } else {
+      this.showNewNoteForm = true;
+      // Reset and mark as pristine to ensure proper button state
+      this.newNoteForm.reset();
+      this.newNoteForm.markAsPristine();
+      this.newNoteForm.markAsUntouched();
     }
   }
 
-  removeFromGroup(note: Note) {
-    if (confirm('Are you sure you want to remove this note from the group?')) {
-      this.notesService.updateNote(note.id, { ...note, groupId: undefined }).subscribe({
+  createNote(): void {
+    if (this.newNoteForm.invalid || !this.group) return;
+    
+    this.isLoading = true;
+    const formValue = this.newNoteForm.value;
+    
+    const newNote: CreateNoteRequest = {
+      title: formValue.title || '',
+      subtitle: formValue.subtitle || '',
+      content: '',
+      groupId: this.group.id
+    };
+
+    this.subscriptions.push(
+      this.notesService.createNote(newNote).subscribe({
         next: () => {
-          this.notes = this.notes.filter(n => n.id !== note.id);
-          this.loadNoteCounts();
+          this.isLoading = false
+          this.newNoteForm.reset()
+          this.showNewNoteForm = false
+
+          // Reload notes for the group
+          if (this.group) {
+            this.loadNotesForGroup(this.group.id)
+          }
+
+          // Refresh counts
+          this.loadCounts()
         },
-        error: (error: Error) => {
-          console.error('Error removing note from group:', error);
+        error: (error) => {
+          console.error("Error creating note:", error)
+          this.isLoading = false
         }
-      });
-    }
+      })
+    )
   }
 
-  onArchive(note: Note) {
+  removeNoteFromGroup(note: Note): void {
+    if (!this.group) return
+
+    console.log('[DEBUG] Starting removeNoteFromGroup', { noteId: note.id, noteGroupId: note.groupId });
+    this.isLoading = true
+
+    // Create a proper UpdateNoteRequest with groupId set to null
+    // This will remove the note from the group in the database
+    const updatedNote: UpdateNoteRequest = {
+      groupId: null
+    }
+
+    console.log('[DEBUG] Sending update request', { noteId: note.id, updatedNote });
+
+    this.subscriptions.push(
+      this.notesService.updateNote(note.id, updatedNote).subscribe({
+        next: (result) => {
+          console.log('[DEBUG] Update successful', { result });
+          this.isLoading = false
+
+          // Remove note from local array
+          this.notes = this.notes.filter(n => n.id !== note.id)
+          console.log('[DEBUG] Removed note from local array', { remainingNotes: this.notes.length });
+
+          // Refresh counts
+          this.loadCounts()
+
+          // Force refresh the notes service
+          console.log('[DEBUG] Refreshing notes list');
+          this.notesService.getNotes(note.status || 'active').subscribe(notes => {
+            console.log('[DEBUG] Notes list refreshed', { notesCount: notes.length });
+          });
+        },
+        error: (error) => {
+          console.error("[DEBUG] Error removing note from group:", error)
+          this.isLoading = false
+        }
+      })
+    )
+  }
+
+  onArchive(note: Note): void {
     this.notesService.archiveNote(note.id).subscribe({
       next: () => {
-        this.notes = this.notes.filter(n => n.id !== note.id);
-        this.loadNoteCounts();
+        // Remove note from the list
+        this.notes = this.notes.filter(n => n.id !== note.id)
+        // Refresh counts
+        this.loadCounts()
       },
-      error: (error: Error) => {
-        console.error('Error archiving note:', error);
+      error: (error) => {
+        console.error("Error archiving note:", error)
       }
-    });
+    })
   }
 
-  onTrash(note: Note) {
+  onTrash(note: Note): void {
     this.notesService.trashNote(note.id).subscribe({
       next: () => {
-        this.notes = this.notes.filter(n => n.id !== note.id);
-        this.loadNoteCounts();
+        // Remove note from the list
+        this.notes = this.notes.filter(n => n.id !== note.id)
+        // Refresh counts
+        this.loadCounts()
       },
-      error: (error: Error) => {
-        console.error('Error trashing note:', error);
+      error: (error) => {
+        console.error("Error trashing note:", error)
       }
-    });
+    })
   }
 
-  convertToPermanentAccount() {
-    // Implement the conversion logic here
-    console.log('Converting to permanent account...');
+  onRestore(note: Note): void {
+    this.notesService.restoreNote(note.id).subscribe({
+      next: () => {
+        // Remove note from the list if it was in trash/archive
+        this.notes = this.notes.filter(n => n.id !== note.id)
+        // Refresh counts
+        this.loadCounts()
+      },
+      error: (error) => {
+        console.error("Error restoring note:", error)
+      }
+    })
+  }
+
+  onDelete(note: Note): void {
+    this.notesService.deleteNote(note.id).subscribe({
+      next: () => {
+        // Remove note from the list
+        this.notes = this.notes.filter(n => n.id !== note.id)
+        // Refresh counts
+        this.loadCounts()
+      },
+      error: (error) => {
+        console.error("Error deleting note:", error)
+      }
+    })
   }
 
   trackNoteById(index: number, note: Note): string {
-    return note.id;
+    return note.id
   }
 
-  stopPropagation(event: Event) {
-    event.stopPropagation();
+  stopPropagation(event: Event): void {
+    event.stopPropagation()
   }
 
+  convertToPermanentAccount(): void {
+    this.router.navigate(['/register'], { queryParams: { fromGuest: 'true' } })
+  }
+
+  // Getter methods for form controls
   get title() { return this.newNoteForm.get('title'); }
   get subtitle() { return this.newNoteForm.get('subtitle'); }
-  get content() { return this.newNoteForm.get('content'); }
+
+  ngOnDestroy(): void {
+    this.subscriptions.forEach(sub => sub.unsubscribe())
+  }
 }

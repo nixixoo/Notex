@@ -111,8 +111,8 @@ input:checked + .slider:before {
 }
 
 .new-note-form-container {
-  background-color: var(--background-color);
   border-radius: 8px;
+  background-color: var(--background-color);
   padding: 1.5rem;
   margin-bottom: 2rem;
   box-shadow: 0 2px 8px var(--shadow-color);
@@ -128,35 +128,32 @@ input:checked + .slider:before {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-}
 
-label {
-  font-weight: 500;
-  color: var(--text-color-light);
-}
-
-.form-control {
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  font-size: 1rem;
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
-
-  &:focus {
-    outline: none;
-    border-color: var(--primary-purple);
-    box-shadow: 0 0 0 2px rgba(255, 158, 94, 0.2);
+  label {
+    font-weight: 500;
+    color: var(--text-color-light);
   }
 
-  &.is-invalid {
-    border-color: var(--error-color);
-  }
-}
+  .form-control {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 1rem;
+    background-color: var(--surface-color);
+    color: var(--text-color);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
 
-.error-message {
-  color: var(--error-color);
-  font-size: 0.875rem;
-  margin-top: 0.25rem;
+    &:focus {
+      outline: none;
+      border-color: var(--primary-purple);
+      box-shadow: 0 0 0 2px rgba(191, 157, 251, 0.2);
+    }
+
+    &.is-invalid {
+      border-color: var(--error-color);
+    }
+  }
 }
 
 .submit-btn {
@@ -168,11 +165,52 @@ label {
   font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background-color 0.3s ease;
 
   &:hover:not(:disabled) {
     background-color: var(--secondary-purple);
   }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+}
+
+.input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.feedback-container {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: 0.25rem;
+  min-height: 1.5rem;
+}
+
+.feedback-left {
+  flex: 1;
+}
+
+.character-counter {
+  font-size: 0.875rem;
+  color: var(--text-color-light);
+  margin-left: auto;
+  
+  &.warning {
+    color: #ffa726;
+  }
+  
+  &.danger {
+    color: var(--error-color);
+  }
+}
+
+.error-message {
+  color: var(--error-color);
+  font-size: 0.875rem;
 }
 
 .loading-container {
@@ -206,43 +244,53 @@ label {
   p {
     margin: 0;
     font-size: 1.1rem;
-    transition: opacity 0.3s ease; // Add this line
+    transition: opacity 0.3s ease; 
   }
 }
 .notes-grid {
-  position: relative;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 1.5rem;
-
-  > .add-note-card {
-    order: -1; /* Force to first position */
-    transition: all 0.3s ease, opacity 0.3s ease !important; // Add opacity transition
-
-  }
-
+  padding: 1rem 0;
 }
 
 .note-card {
+  position: relative;
   background-color: var(--background-color);
   border-radius: 8px;
-  box-shadow: 0 2px 10px var(--shadow-color);
-  padding: 1.5rem;
-  transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s;
+  box-shadow: 0 2px 8px var(--shadow-color);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  min-height: 200px;
   display: flex;
-  position: relative;
+  flex-direction: column;
 
   &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px var(--shadow-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--shadow-color);
+  }
+
+  &.add-note-card {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--surface-color);
+    border: 2px dashed var(--border-color);
+    box-shadow: none;
+
+    &:hover {
+      border-color: var(--primary-purple);
+      background-color: var(--hover-color);
+    }
   }
 }
 
 .note-card-content {
+  padding: 1.5rem;
+  cursor: pointer;
   flex: 1;
   display: flex;
   flex-direction: column;
-  cursor: pointer;
 }
 
 .note-menu {
@@ -257,7 +305,7 @@ label {
   font-weight: 600;
   color: var(--text-color);
   margin-bottom: 0.5rem;
-  padding-right: 2rem; // Make room for the menu
+  padding-right: 2rem; 
 }
 
 .note-subtitle {
@@ -371,5 +419,3 @@ label {
   color: var(--text-color-light);
   font-weight: 500;
 }
-
-

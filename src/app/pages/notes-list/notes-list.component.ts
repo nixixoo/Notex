@@ -13,6 +13,7 @@ import { SidebarComponent } from "../../components/sidebar/sidebar.component"
 import { NoteMenuComponent } from "../../components/note-menu/note-menu.component"
 import { MatIconModule } from "@angular/material/icon"
 import { SidebarService } from "../../services/sidebar.service"
+import { GroupsService } from "../../services/groups.service"
 
 interface CreateNoteRequest {
   title: string
@@ -100,7 +101,15 @@ export class NotesListComponent implements OnInit {
   activeCount = 0
   archivedCount = 0
   trashedCount = 0
-  showEmptyMessage = false;
+  groupCount = 0
+  showEmptyMessage = false
+  titleLengthWarning = false
+  titleLengthDanger = false
+  subtitleLengthWarning = false
+  subtitleLengthDanger = false
+
+  readonly TITLE_MAX_LENGTH = 75
+  readonly SUBTITLE_MAX_LENGTH = 150
 
   constructor(
     @Inject(NotesService) private notesService: NotesService,
@@ -108,13 +117,43 @@ export class NotesListComponent implements OnInit {
     @Inject(AuthService) public authService: AuthService,
     @Inject(Router) public router: Router,
     @Inject(ActivatedRoute) private route: ActivatedRoute,
-    public sidebarService: SidebarService
+    public sidebarService: SidebarService,
+    @Inject(GroupsService) private groupsService: GroupsService
   ) {
     this.newNoteForm = this.fb.group({
-      title: ['', Validators.required],
-      subtitle: ['', Validators.required],
+      title: ['', [
+        Validators.required,
+        Validators.maxLength(this.TITLE_MAX_LENGTH)
+      ]],
+      subtitle: ['', [
+        Validators.required,
+        Validators.maxLength(this.SUBTITLE_MAX_LENGTH)
+      ]],
       content: ['']
     });
+
+    // Monitor title and subtitle length
+    this.title?.valueChanges.subscribe((value: string) => {
+      const length = value?.length || 0
+      this.titleLengthWarning = length >= Math.floor(this.TITLE_MAX_LENGTH * 0.85) && length < this.TITLE_MAX_LENGTH
+      this.titleLengthDanger = length >= this.TITLE_MAX_LENGTH
+      
+      // Enforce max length by truncating
+      if (length > this.TITLE_MAX_LENGTH) {
+        this.title?.setValue(value.slice(0, this.TITLE_MAX_LENGTH), { emitEvent: false })
+      }
+    })
+
+    this.subtitle?.valueChanges.subscribe((value: string) => {
+      const length = value?.length || 0
+      this.subtitleLengthWarning = length >= Math.floor(this.SUBTITLE_MAX_LENGTH * 0.85) && length < this.SUBTITLE_MAX_LENGTH
+      this.subtitleLengthDanger = length >= this.SUBTITLE_MAX_LENGTH
+      
+      // Enforce max length by truncating
+      if (length > this.SUBTITLE_MAX_LENGTH) {
+        this.subtitle?.setValue(value.slice(0, this.SUBTITLE_MAX_LENGTH), { emitEvent: false })
+      }
+    })
   }
 
   get title() {
@@ -149,6 +188,7 @@ export class NotesListComponent implements OnInit {
     })
 
     this.loadNoteCounts()
+    this.loadGroupCount()
   }
 
   loadNotes(showLoading: boolean = true): void {
@@ -180,6 +220,17 @@ export class NotesListComponent implements OnInit {
       this.archivedCount = counts.archived
       this.trashedCount = counts.trashed
     })
+  }
+
+  loadGroupCount(): void {
+    this.groupsService.getGroups().subscribe({
+      next: (groups) => {
+        this.groupCount = groups.length;
+      },
+      error: (error) => {
+        console.error('Error loading group count:', error);
+      }
+    });
   }
 
   toggleNewNoteForm(): void {
@@ -280,4 +331,3 @@ export class NotesListComponent implements OnInit {
     event.stopPropagation()
   }
 }
-

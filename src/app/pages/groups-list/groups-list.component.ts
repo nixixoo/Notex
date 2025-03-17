@@ -10,6 +10,8 @@ import { AuthService } from '../../services/auth.service';
 import { SidebarComponent } from '../../components/sidebar/sidebar.component';
 import { GroupMenuComponent } from '../../components/group-menu/group-menu.component';
 import { Group } from '../../models/group.model';
+import { Router } from '@angular/router';
+import { SidebarService } from '../../services/sidebar.service';
 
 @Component({
   selector: 'app-groups-list',
@@ -67,11 +69,19 @@ import { Group } from '../../models/group.model';
 })
 export class GroupsListComponent implements OnInit {
   groups: Group[] = [];
-  isLoading = true; 
+  isLoadingGroups = true;
   showNewGroupForm = false;
   newGroupForm: FormGroup;
+  isLoading = false;
   showEmptyMessage = false;
-  
+  nameLengthWarning = false;
+  nameLengthDanger = false;
+  descriptionLengthWarning = false;
+  descriptionLengthDanger = false;
+
+  readonly NAME_MAX_LENGTH = 50;
+  readonly DESCRIPTION_MAX_LENGTH = 150;
+
   // Sidebar counts
   activeCount = 0;
   archivedCount = 0;
@@ -80,14 +90,45 @@ export class GroupsListComponent implements OnInit {
 
   constructor(
     private groupsService: GroupsService,
-    private notesService: NotesService,
+    private fb: FormBuilder,
     public authService: AuthService,
-    private fb: FormBuilder
+    public router: Router,
+    public sidebarService: SidebarService,
+    private notesService: NotesService
   ) {
     this.newGroupForm = this.fb.group({
-      name: ['', [Validators.required]],
-      description: ['', [Validators.required]]
+      name: ['', [
+        Validators.required,
+        Validators.maxLength(this.NAME_MAX_LENGTH)
+      ]],
+      description: ['', [
+        Validators.required,
+        Validators.maxLength(this.DESCRIPTION_MAX_LENGTH)
+      ]]
     });
+
+    // Monitor name and description length
+    this.name?.valueChanges.subscribe((value: string) => {
+      const length = value?.length || 0
+      this.nameLengthWarning = length >= Math.floor(this.NAME_MAX_LENGTH * 0.85) && length < this.NAME_MAX_LENGTH
+      this.nameLengthDanger = length >= this.NAME_MAX_LENGTH
+      
+      // Enforce max length by truncating
+      if (length > this.NAME_MAX_LENGTH) {
+        this.name?.setValue(value.slice(0, this.NAME_MAX_LENGTH), { emitEvent: false })
+      }
+    })
+
+    this.description?.valueChanges.subscribe((value: string) => {
+      const length = value?.length || 0
+      this.descriptionLengthWarning = length >= Math.floor(this.DESCRIPTION_MAX_LENGTH * 0.85) && length < this.DESCRIPTION_MAX_LENGTH
+      this.descriptionLengthDanger = length >= this.DESCRIPTION_MAX_LENGTH
+      
+      // Enforce max length by truncating
+      if (length > this.DESCRIPTION_MAX_LENGTH) {
+        this.description?.setValue(value.slice(0, this.DESCRIPTION_MAX_LENGTH), { emitEvent: false })
+      }
+    })
   }
 
   ngOnInit() {
@@ -96,7 +137,7 @@ export class GroupsListComponent implements OnInit {
   }
 
   loadGroups() {
-    this.isLoading = true;
+    this.isLoadingGroups = true;
     this.showEmptyMessage = false;
     
     this.groupsService.getGroups().subscribe({
@@ -107,11 +148,11 @@ export class GroupsListComponent implements OnInit {
         if (groups.length === 0) {
           this.showEmptyMessage = true;
         }
-        this.isLoading = false;
+        this.isLoadingGroups = false;
       },
       error: (error) => {
         console.error('Error loading groups:', error);
-        this.isLoading = false;
+        this.isLoadingGroups = false;
         this.showEmptyMessage = false;
       }
     });
@@ -194,6 +235,11 @@ export class GroupsListComponent implements OnInit {
     console.log('Converting to permanent account...');
   }
 
-  get name() { return this.newGroupForm.get('name'); }
-  get description() { return this.newGroupForm.get('description'); }
+  get name() {
+    return this.newGroupForm.get('name');
+  }
+
+  get description() {
+    return this.newGroupForm.get('description');
+  }
 }

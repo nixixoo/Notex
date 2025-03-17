@@ -69,30 +69,48 @@ export class NotesService {
   }
 
   getNotes(status: "active" | "archived" | "trashed" = "active"): Observable<Note[]> {
+    console.log('[DEBUG NotesService] getNotes called', { status });
+    
     if (this.authService.isGuestMode()) {
+      console.log('[DEBUG NotesService] Guest mode detected for getNotes');
       const notes = this.getLocalNotes().filter(
         (note) => (note.status === status || (!note.status && status === "active")) && !note.groupId,
       )
+      console.log('[DEBUG NotesService] Filtered guest notes', { 
+        totalNotes: this.getLocalNotes().length,
+        filteredNotes: notes.length,
+        notesWithGroupId: this.getLocalNotes().filter(n => n.groupId).length
+      });
       return of(notes)
     }
 
     if (this.authService.isAuthenticated()) {
+      console.log('[DEBUG NotesService] Authenticated mode for getNotes');
       const userId = this.authService.getCurrentUser()?.id
       if (!userId) return of([])
 
+      console.log('[DEBUG NotesService] Executing SQL query for getNotes');
       return from(
         this.client.execute({
           sql: "SELECT * FROM notes WHERE userId = ? AND status = ? AND (groupId IS NULL OR groupId = '') ORDER BY updatedAt DESC",
           args: [userId, status],
         }),
       ).pipe(
-        map((result) => this.mapNotes(result)),
+        map((result) => {
+          const notes = this.mapNotes(result);
+          console.log('[DEBUG NotesService] SQL query results for getNotes', { 
+            rowCount: result.rows.length,
+            mappedNotes: notes.length
+          });
+          return notes;
+        }),
         catchError((error) => {
-          console.error("Error fetching notes:", error)
+          console.error("[DEBUG NotesService] Error fetching notes:", error)
           throw error
         }),
       )
     } else {
+      console.log('[DEBUG NotesService] Local mode (not authenticated) for getNotes');
       const notes = this.getLocalNotes()
         .filter((note) => (note.status === status || (!note.status && status === "active")) && !note.groupId)
         .map((note) => ({
@@ -101,6 +119,11 @@ export class NotesService {
           updatedAt: new Date(note.updatedAt),
           isLocal: true,
         }))
+      console.log('[DEBUG NotesService] Filtered local notes', { 
+        totalNotes: this.getLocalNotes().length,
+        filteredNotes: notes.length,
+        notesWithGroupId: this.getLocalNotes().filter(n => n.groupId).length
+      });
       return of(notes)
     }
   }
@@ -217,11 +240,15 @@ export class NotesService {
   }
 
   updateNote(id: string, noteData: UpdateNoteRequest): Observable<Note> {
+    console.log('[DEBUG NotesService] updateNote called', { id, noteData });
+    
     if (this.authService.isGuestMode()) {
+      console.log('[DEBUG NotesService] Guest mode detected');
       const notes = this.getLocalNotes()
       const noteIndex = notes.findIndex((n) => n.id === id)
 
       if (noteIndex === -1) {
+        console.log('[DEBUG NotesService] Note not found in local storage');
         return of().pipe(
           catchError(() => {
             throw new Error("Note not found")
@@ -234,6 +261,11 @@ export class NotesService {
         ...noteData,
         updatedAt: new Date(),
       }
+      
+      console.log('[DEBUG NotesService] Updated note in guest mode', { 
+        before: notes[noteIndex],
+        after: updatedNote
+      });
 
       notes[noteIndex] = updatedNote
       this.saveLocalNotes(notes)
@@ -242,6 +274,8 @@ export class NotesService {
       const currentNotes = this.notesSubject.value
       const updatedNotes = currentNotes.map((note) => (note.id === id ? updatedNote : note))
       this.notesSubject.next(updatedNotes)
+      
+      console.log('[DEBUG NotesService] Updated BehaviorSubject in guest mode');
 
       return of(updatedNote)
     }
@@ -249,6 +283,8 @@ export class NotesService {
     const userId = this.authService.getCurrentUser()?.id
     if (!userId) throw new Error("Not authenticated")
     const updatedAt = new Date()
+    
+    console.log('[DEBUG NotesService] Authenticated mode, building SQL query');
 
     // Build the SQL query dynamically based on what fields are provided
     let sql = `UPDATE notes SET updatedAt = ?`
@@ -276,11 +312,17 @@ export class NotesService {
 
     if (noteData.groupId !== undefined) {
       sql += `, groupId = ?`
-      args.push(noteData.groupId || null)
+      args.push(noteData.groupId)
+      console.log('[DEBUG NotesService] Setting groupId in SQL query', { 
+        groupId: noteData.groupId, 
+        sqlValue: noteData.groupId
+      });
     }
 
     sql += ` WHERE id = ? AND userId = ?`
     args.push(id, userId)
+    
+    console.log('[DEBUG NotesService] Final SQL query', { sql, args });
 
     return from(
       this.client.execute({
@@ -288,12 +330,13 @@ export class NotesService {
         args,
       }),
     ).pipe(
-      map(() => {
+      map((result) => {
+        console.log('[DEBUG NotesService] SQL query executed', { result });
         const currentNotes = this.notesSubject.value
         const existingNoteIndex = currentNotes.findIndex((note) => note.id === id)
         
         if (existingNoteIndex === -1) {
-          console.warn('Note not found in local state - may have been filtered')
+          console.warn('[DEBUG NotesService] Note not found in local state - may have been filtered');
           return {} as Note // Return empty object, will be filtered later
         }
       
@@ -306,14 +349,20 @@ export class NotesService {
           ...(noteData.groupId !== undefined && { groupId: noteData.groupId }),
           updatedAt,
         }
+        
+        console.log('[DEBUG NotesService] Updated note object', { 
+          before: currentNotes[existingNoteIndex],
+          after: updatedNote
+        });
       
         const updatedNotes = [...currentNotes]
         updatedNotes[existingNoteIndex] = updatedNote
         this.notesSubject.next(updatedNotes)
+        console.log('[DEBUG NotesService] Updated BehaviorSubject');
         return updatedNote
       }),
       catchError((error) => {
-        console.error("Error updating note:", error)
+        console.error("[DEBUG NotesService] Error updating note:", error)
         throw error
       }),
     )

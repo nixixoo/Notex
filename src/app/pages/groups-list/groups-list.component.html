@@ -1,13 +1,13 @@
 <div class="page-layout">
   <app-sidebar 
-    [activeCount]="activeCount" 
-    [archivedCount]="archivedCount" 
+    [activeCount]="activeCount"
+    [archivedCount]="archivedCount"
     [trashedCount]="trashedCount"
     [groupCount]="groupCount">
   </app-sidebar>
   
-  <div class="main-content" [@fadeIn]>
-    <div *ngIf="authService.isGuestMode()" class="guest-banner" [@fadeIn]>
+  <div class="main-content">
+    <div *ngIf="authService.isGuestMode()" class="guest-banner">
       <span>You're using guest mode. Groups will be saved locally.</span>
       <button (click)="convertToPermanentAccount()" class="guest-btn">
         Create Permanent Account
@@ -19,44 +19,67 @@
         <h1 class="groups-title">My Groups</h1>
       </div>
       
-      <div *ngIf="showNewGroupForm" class="new-group-form-container" [@slideDown]>
+      <div *ngIf="showNewGroupForm" 
+           class="new-group-form-container"
+           [@slideDown]>
         <form [formGroup]="newGroupForm" (ngSubmit)="createGroup()" class="new-group-form">
           <div class="form-group">
             <label for="name">Group Name</label>
-            <input 
-              type="text" 
-              id="name" 
-              formControlName="name" 
-              class="form-control"
-              [class.is-invalid]="name?.invalid && (name?.dirty || name?.touched)"
-              placeholder="Enter group name"
-            >
-            <div *ngIf="name?.invalid && (name?.dirty || name?.touched)" class="error-message">
-              <span *ngIf="name?.errors?.['required']">Group name is required</span>
+            <div class="input-wrapper">
+              <input 
+                type="text" 
+                id="name" 
+                formControlName="name" 
+                class="form-control"
+                [class.is-invalid]="name?.invalid && (name?.dirty || name?.touched)"
+                [maxlength]="NAME_MAX_LENGTH"
+              >
+            </div>
+            <div class="feedback-container">
+              <div class="feedback-left">
+                <div *ngIf="name?.invalid && (name?.dirty || name?.touched)" class="error-message">
+                  <span *ngIf="name?.errors?.['required']">Group name is required</span>
+                  <span *ngIf="name?.errors?.['maxlength']">Group name cannot exceed 50 characters</span>
+                </div>
+              </div>
+              <span class="character-counter" 
+                    [class.warning]="nameLengthWarning"
+                    [class.danger]="nameLengthDanger">
+                {{ name?.value?.length || 0 }}/{{ NAME_MAX_LENGTH }}
+              </span>
             </div>
           </div>
           
           <div class="form-group">
             <label for="description">Description</label>
-            <textarea 
-              id="description" 
-              formControlName="description" 
-              class="form-control"
-              [class.is-invalid]="description?.invalid && (description?.dirty || description?.touched)"
-              placeholder="Enter group description"
-              rows="3"
-            ></textarea>
-            <div *ngIf="description?.invalid && (description?.dirty || description?.touched)" class="error-message">
-              <span *ngIf="description?.errors?.['required']">Group description is required</span>
+            <div class="input-wrapper">
+              <textarea 
+                id="description" 
+                formControlName="description" 
+                class="form-control"
+                [class.is-invalid]="description?.invalid && (description?.dirty || description?.touched)"
+                [maxlength]="DESCRIPTION_MAX_LENGTH"
+                rows="3"
+              ></textarea>
+            </div>
+            <div class="feedback-container">
+              <div class="feedback-left">
+                <div *ngIf="description?.invalid && (description?.dirty || description?.touched)" class="error-message">
+                  <span *ngIf="description?.errors?.['required']">Group description is required</span>
+                  <span *ngIf="description?.errors?.['maxlength']">Group description cannot exceed 150 characters</span>
+                </div>
+              </div>
+              <span class="character-counter" 
+                    [class.warning]="descriptionLengthWarning"
+                    [class.danger]="descriptionLengthDanger">
+                {{ description?.value?.length || 0 }}/{{ DESCRIPTION_MAX_LENGTH }}
+              </span>
             </div>
           </div>
           
-          <div class="form-actions">
-            <button type="button" class="cancel-btn" (click)="toggleNewGroupForm()">Cancel</button>
-            <button type="submit" class="submit-btn" [disabled]="newGroupForm.invalid || isLoading">
-              {{ isLoading ? 'Creating...' : 'Create Group' }}
-            </button>
-          </div>
+          <button type="submit" class="submit-btn" [disabled]="newGroupForm.invalid || isLoading">
+            {{ isLoading ? 'Creating...' : 'Create Group' }}
+          </button>
         </form>
       </div>
       
@@ -99,7 +122,7 @@
           <div class="group-card-content" [routerLink]="['/groups', group.id]">
             <h2 class="group-name">{{ group.name }}</h2>
             <p class="group-description">{{ group.description }}</p>
-            <div class="group-meta">
+            <div class="group-footer">
               <span class="group-date">{{ group.updatedAt | date:'medium' }}</span>
             </div>
           </div>

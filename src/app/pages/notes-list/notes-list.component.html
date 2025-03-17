@@ -2,7 +2,8 @@
   <app-sidebar 
     [activeCount]="activeCount" 
     [archivedCount]="archivedCount" 
-    [trashedCount]="trashedCount">
+    [trashedCount]="trashedCount"
+    [groupCount]="groupCount">
   </app-sidebar>
   
   <div class="main-content">
@@ -31,29 +32,55 @@
         <form [formGroup]="newNoteForm" (ngSubmit)="createNote()" class="new-note-form">
           <div class="form-group">
             <label for="title">Title</label>
-            <input 
-              type="text" 
-              id="title" 
-              formControlName="title" 
-              class="form-control"
-              [class.is-invalid]="title?.invalid && (title?.dirty || title?.touched)"
-            >
-            <div *ngIf="title?.invalid && (title?.dirty || title?.touched)" class="error-message">
-              <span *ngIf="title?.errors?.['required']">Title is required</span>
+            <div class="input-wrapper">
+              <input 
+                type="text" 
+                id="title" 
+                formControlName="title" 
+                class="form-control"
+                [class.is-invalid]="title?.invalid && (title?.dirty || title?.touched)"
+                [maxlength]="TITLE_MAX_LENGTH"
+              >
+            </div>
+            <div class="feedback-container">
+              <div class="feedback-left">
+                <div *ngIf="title?.invalid && (title?.dirty || title?.touched)" class="error-message">
+                  <span *ngIf="title?.errors?.['required']">Title is required</span>
+                  <span *ngIf="title?.errors?.['maxlength']">Title cannot exceed 75 characters</span>
+                </div>
+              </div>
+              <span class="character-counter" 
+                    [class.warning]="titleLengthWarning"
+                    [class.danger]="titleLengthDanger">
+                {{ title?.value?.length || 0 }}/{{ TITLE_MAX_LENGTH }}
+              </span>
             </div>
           </div>
           
           <div class="form-group">
             <label for="subtitle">Subtitle</label>
-            <input 
-              type="text" 
-              id="subtitle" 
-              formControlName="subtitle" 
-              class="form-control"
-              [class.is-invalid]="subtitle?.invalid && (subtitle?.dirty || subtitle?.touched)"
-            >
-            <div *ngIf="subtitle?.invalid && (subtitle?.dirty || subtitle?.touched)" class="error-message">
-              <span *ngIf="subtitle?.errors?.['required']">Subtitle is required</span>
+            <div class="input-wrapper">
+              <input 
+                type="text" 
+                id="subtitle" 
+                formControlName="subtitle" 
+                class="form-control"
+                [class.is-invalid]="subtitle?.invalid && (subtitle?.dirty || subtitle?.touched)"
+                [maxlength]="SUBTITLE_MAX_LENGTH"
+              >
+            </div>
+            <div class="feedback-container">
+              <div class="feedback-left">
+                <div *ngIf="subtitle?.invalid && (subtitle?.dirty || subtitle?.touched)" class="error-message">
+                  <span *ngIf="subtitle?.errors?.['required']">Subtitle is required</span>
+                  <span *ngIf="subtitle?.errors?.['maxlength']">Subtitle cannot exceed 150 characters</span>
+                </div>
+              </div>
+              <span class="character-counter" 
+                    [class.warning]="subtitleLengthWarning"
+                    [class.danger]="subtitleLengthDanger">
+                {{ subtitle?.value?.length || 0 }}/{{ SUBTITLE_MAX_LENGTH }}
+              </span>
             </div>
           </div>
           
@@ -69,13 +96,12 @@
       </div>
       
       <!-- Empty states for archive/trash -->
-      <!-- Empty states for archive/trash -->
-<div *ngIf="!isLoadingNotes && notes.length === 0 && currentStatus !== 'active'" 
-class="empty-notes"
-[@fadeInOut]>
-<p *ngIf="currentStatus === 'archived'">You don't have any archived notes.</p>
-<p *ngIf="currentStatus === 'trashed'">Your trash is empty.</p>
-</div>
+      <div *ngIf="!isLoadingNotes && notes.length === 0 && currentStatus !== 'active'" 
+           class="empty-notes"
+           [@fadeInOut]>
+        <p *ngIf="currentStatus === 'archived'">You don't have any archived notes.</p>
+        <p *ngIf="currentStatus === 'trashed'">Your trash is empty.</p>
+      </div>
       
       <!-- Notes grid (always shown for active, even when empty) -->
       <div *ngIf="!isLoadingNotes && (currentStatus === 'active' || notes.length > 0)" 
@@ -83,17 +109,16 @@ class="empty-notes"
            [@listAnimation]="notes.length">
         
         <!-- New Note Card (only for active status) -->
-        <!-- New Note Card -->
-<div *ngIf="currentStatus === 'active'"
-class="note-card add-note-card"
-[class.centered-empty]="notes.length === 0"
-(click)="toggleNewNoteForm()"
-[@fadeInOut]>
-<div class="add-note-content">
-<mat-icon class="add-icon">note_add</mat-icon>
-<span class="add-text">New Note</span>
-</div>
-</div>
+        <div *ngIf="currentStatus === 'active'"
+             class="note-card add-note-card"
+             [class.centered-empty]="notes.length === 0"
+             (click)="toggleNewNoteForm()"
+             [@fadeInOut]>
+          <div class="add-note-content">
+            <mat-icon class="add-icon">note_add</mat-icon>
+            <span class="add-text">New Note</span>
+          </div>
+        </div>
         
         <!-- Existing Notes -->
         <div *ngFor="let note of notes; trackBy: trackNoteById" class="note-card">

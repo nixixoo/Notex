@@ -7,6 +7,13 @@
   </app-sidebar>
   
   <div class="main-content">
+    <div *ngIf="authService.isGuestMode()" class="guest-banner">
+      <span>You're using guest mode. Notes will be saved locally.</span>
+      <button (click)="convertToPermanentAccount()" class="guest-btn">
+        Create Permanent Account
+      </button>
+    </div>
+
     <div class="notes-container">
       <!-- Loading Spinner for Group -->
       <div *ngIf="isLoadingGroup" class="loading-container">
@@ -15,17 +22,19 @@
       </div>
 
       <!-- Group Header -->
-      <div *ngIf="!isLoadingGroup && group" class="notes-header" [@fadeInOut]>
+      <div *ngIf="!isLoadingGroup && group" class="group-header" [@fadeInOut]>
         <div class="header-left">
           <button class="back-button" routerLink="/groups">
             <mat-icon>arrow_back</mat-icon>
           </button>
-          <h1 class="notes-title">{{ group.name }}</h1>
+          <h1 class="group-title">{{ group.name }}</h1>
         </div>
         <div class="header-controls">
-          <button class="add-note-btn" (click)="toggleNewNoteForm()">
-            <mat-icon>add</mat-icon> Add Note
-          </button>
+          <label class="switch">
+            <input type="checkbox" [(ngModel)]="showPreview">
+            <span class="slider round"></span>
+          </label>
+          <span class="preview-label">Show Preview</span>
         </div>
       </div>
 
@@ -34,40 +43,56 @@
         <form [formGroup]="newNoteForm" (ngSubmit)="createNote()" class="new-note-form">
           <div class="form-group">
             <label for="title">Title</label>
-            <input 
-              type="text" 
-              id="title" 
-              formControlName="title" 
-              class="form-control"
-              [class.is-invalid]="title?.invalid && (title?.dirty || title?.touched)"
-            >
-            <div *ngIf="title?.invalid && (title?.dirty || title?.touched)" class="error-message">
-              <span *ngIf="title?.errors?.['required']">Title is required</span>
+            <div class="input-wrapper">
+              <input 
+                type="text" 
+                id="title" 
+                formControlName="title" 
+                class="form-control"
+                [class.is-invalid]="title?.invalid && (title?.dirty || title?.touched)"
+                [maxlength]="TITLE_MAX_LENGTH"
+              >
+            </div>
+            <div class="feedback-container">
+              <div class="feedback-left">
+                <div *ngIf="title?.invalid && (title?.dirty || title?.touched)" class="error-message">
+                  <span *ngIf="title?.errors?.['required']">Title is required</span>
+                  <span *ngIf="title?.errors?.['maxlength']">Title cannot exceed 75 characters</span>
+                </div>
+              </div>
+              <span class="character-counter" 
+                    [class.warning]="titleLengthWarning"
+                    [class.danger]="titleLengthDanger">
+                {{ title?.value?.length || 0 }}/{{ TITLE_MAX_LENGTH }}
+              </span>
             </div>
           </div>
           
           <div class="form-group">
             <label for="subtitle">Subtitle</label>
-            <input 
-              type="text" 
-              id="subtitle" 
-              formControlName="subtitle" 
-              class="form-control"
-              [class.is-invalid]="subtitle?.invalid && (subtitle?.dirty || subtitle?.touched)"
-            >
-            <div *ngIf="subtitle?.invalid && (subtitle?.dirty || subtitle?.touched)" class="error-message">
-              <span *ngIf="subtitle?.errors?.['required']">Subtitle is required</span>
+            <div class="input-wrapper">
+              <input 
+                type="text" 
+                id="subtitle" 
+                formControlName="subtitle" 
+                class="form-control"
+                [class.is-invalid]="subtitle?.invalid && (subtitle?.dirty || subtitle?.touched)"
+                [maxlength]="SUBTITLE_MAX_LENGTH"
+              >
             </div>
-          </div>
-
-          <div class="form-group">
-            <label for="content">Content</label>
-            <textarea 
-              id="content" 
-              formControlName="content" 
-              class="form-control"
-              rows="5"
-            ></textarea>
+            <div class="feedback-container">
+              <div class="feedback-left">
+                <div *ngIf="subtitle?.invalid && (subtitle?.dirty || subtitle?.touched)" class="error-message">
+                  <span *ngIf="subtitle?.errors?.['required']">Subtitle is required</span>
+                  <span *ngIf="subtitle?.errors?.['maxlength']">Subtitle cannot exceed 150 characters</span>
+                </div>
+              </div>
+              <span class="character-counter" 
+                    [class.warning]="subtitleLengthWarning"
+                    [class.danger]="subtitleLengthDanger">
+                {{ subtitle?.value?.length || 0 }}/{{ SUBTITLE_MAX_LENGTH }}
+              </span>
+            </div>
           </div>
           
           <button type="submit" class="submit-btn" [disabled]="newNoteForm.invalid || isLoading">
@@ -84,33 +109,31 @@
 
       <!-- Empty State -->
       <div *ngIf="!isLoadingGroup && !isLoadingNotes && notes.length === 0" class="empty-notes" [@fadeInOut]>
-        <mat-icon>note_off</mat-icon>
-        <p>No notes in this group yet.</p>
-        <p>Add a note to get started.</p>
+
       </div>
 
-      <!-- Notes grid -->
-      <div *ngIf="!isLoadingGroup && !isLoadingNotes" 
-           class="notes-grid" 
-           [@listAnimation]="notes.length">
-        
+      <!-- Notes Grid -->
+      <div *ngIf="!isLoadingGroup && !isLoadingNotes" class="notes-grid"
+          [@listAnimation]="notes.length">
         <!-- New Note Card -->
         <div class="note-card add-note-card"
-             [class.centered-empty]="notes.length === 0"
-             (click)="toggleNewNoteForm()"
-             [@fadeInOut]>
+            [class.centered-empty]="notes.length === 0"
+            (click)="toggleNewNoteForm()"
+            [@fadeInOut]>
           <div class="add-note-content">
             <mat-icon class="add-icon">note_add</mat-icon>
             <span class="add-text">New Note</span>
           </div>
         </div>
-        
+
         <!-- Existing Notes -->
-        <div *ngFor="let note of notes; trackBy: trackNoteById" class="note-card">
+        <div *ngFor="let note of notes; trackBy: trackNoteById" 
+            class="note-card"
+            [@fadeInOut]>
           <div class="note-card-content" [routerLink]="['/notes', note.id]">
             <h2 class="note-title">{{ note.title }}</h2>
             <p class="note-subtitle">{{ note.subtitle }}</p>
-            <div *ngIf="showPreview && note.content" class="note-preview-container" [@previewExpand]>
+            <div *ngIf="showPreview" class="note-preview-container" [@previewExpand]>
               <pre class="note-preview">{{ note.content | previewFormat }}</pre>
             </div>
             <div class="note-footer">
@@ -118,23 +141,14 @@
             </div>
           </div>
           <div class="note-menu" (click)="stopPropagation($event)">
-            <button mat-icon-button [matMenuTriggerFor]="menu" class="menu-button">
-              <mat-icon>more_vert</mat-icon>
-            </button>
-            <mat-menu #menu="matMenu">
-              <button mat-menu-item (click)="removeFromGroup(note)">
-                <mat-icon>folder_off</mat-icon>
-                <span>Remove from Group</span>
-              </button>
-              <button mat-menu-item (click)="onArchive(note)">
-                <mat-icon>archive</mat-icon>
-                <span>Archive</span>
-              </button>
-              <button mat-menu-item (click)="onTrash(note)">
-                <mat-icon>delete</mat-icon>
-                <span>Move to Trash</span>
-              </button>
-            </mat-menu>
+            <app-note-group-menu 
+              [note]="note"
+              (archive)="onArchive(note)"
+              (trash)="onTrash(note)"
+              (restore)="onRestore(note)"
+              (delete)="onDelete(note)"
+              (removeFromGroup)="removeNoteFromGroup(note)">
+            </app-note-group-menu>
           </div>
         </div>
       </div>

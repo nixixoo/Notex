@@ -6,11 +6,15 @@ import { NotesService } from "../../services/notes.service"
 import type { Note } from "../../models/note.model"
 import { animate, style, transition, trigger } from "@angular/animations"
 import { AuthService } from "../../services/auth.service"
+import { GroupsService } from "../../services/groups.service"
+import { SidebarComponent } from "../../components/sidebar/sidebar.component";
+import { SidebarService } from "../../services/sidebar.service";
+import { MatIconModule } from "@angular/material/icon"
 
 @Component({
   selector: "app-note-editor",
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, SidebarComponent, MatIconModule],
   templateUrl: "./note-editor.component.html",
   styleUrls: ["./note-editor.component.scss"],
   animations: [
@@ -20,82 +24,96 @@ import { AuthService } from "../../services/auth.service"
   ],
 })
 export class NoteEditorComponent implements OnInit {
-  noteId: string | null = null
-  note: Note | undefined
   noteForm: FormGroup
-  isLoading = true
+  note: Note | null = null
+  isLoading = false
   isSaving = false
   titleLengthWarning = false
-  subtitleLengthWarning = false;
+  titleLengthDanger = false
+  subtitleLengthWarning = false
+  subtitleLengthDanger = false
+  activeCount = 0
+  archivedCount = 0
+  trashedCount = 0
+  groupCount = 0
+
+  readonly TITLE_MAX_LENGTH = 75
+  readonly SUBTITLE_MAX_LENGTH = 150
 
   constructor(
-    @Inject(ActivatedRoute) private route: ActivatedRoute,
-    @Inject(Router) private router: Router,
-    @Inject(Location) private location: Location,
-    @Inject(NotesService) private notesService: NotesService,
-    @Inject(FormBuilder) private fb: FormBuilder,
-    @Inject(AuthService) private authService: AuthService
+    private route: ActivatedRoute,
+    private router: Router,
+    private formBuilder: FormBuilder,
+    private notesService: NotesService,
+    public location: Location,
+    public authService: AuthService,
+    private groupsService: GroupsService,
+    private sidebarService: SidebarService
   ) {
-    this.noteForm = this.fb.group({
-      title: ['', [Validators.required, Validators.maxLength(75)]],
-      subtitle: ['', [Validators.required, Validators.maxLength(150)]],
-      content: ['']
-    });
+    this.noteForm = this.formBuilder.group({
+      title: ['', [
+        Validators.required,
+        Validators.maxLength(this.TITLE_MAX_LENGTH)
+      ]],
+      subtitle: ['', [
+        Validators.required,
+        Validators.maxLength(this.SUBTITLE_MAX_LENGTH)
+      ]],
+      content: ['', [Validators.required]]
+    })
+
+    // Subscribe to count updates
+    this.sidebarService.activeCount$.subscribe(count => this.activeCount = count)
+    this.sidebarService.archivedCount$.subscribe(count => this.archivedCount = count)
+    this.sidebarService.trashedCount$.subscribe(count => this.trashedCount = count)
+    this.sidebarService.groupCount$.subscribe(count => this.groupCount = count)
+
+    // Monitor title and subtitle length
+    this.title?.valueChanges.subscribe((value: string) => {
+      const length = value?.length || 0
+      this.titleLengthWarning = length >= Math.floor(this.TITLE_MAX_LENGTH * 0.85) && length < this.TITLE_MAX_LENGTH
+      this.titleLengthDanger = length >= this.TITLE_MAX_LENGTH
+      
+      // Enforce max length by truncating
+      if (length > this.TITLE_MAX_LENGTH) {
+        this.title?.setValue(value.slice(0, this.TITLE_MAX_LENGTH), { emitEvent: false })
+      }
+    })
+
+    this.subtitle?.valueChanges.subscribe((value: string) => {
+      const length = value?.length || 0
+      this.subtitleLengthWarning = length >= Math.floor(this.SUBTITLE_MAX_LENGTH * 0.85) && length < this.SUBTITLE_MAX_LENGTH
+      this.subtitleLengthDanger = length >= this.SUBTITLE_MAX_LENGTH
+      
+      // Enforce max length by truncating
+      if (length > this.SUBTITLE_MAX_LENGTH) {
+        this.subtitle?.setValue(value.slice(0, this.SUBTITLE_MAX_LENGTH), { emitEvent: false })
+      }
+    })
   }
 
   get title() {
-    return this.noteForm.get("title")
+    return this.noteForm.get('title')
   }
+
   get subtitle() {
-    return this.noteForm.get("subtitle")
-  }
-  get content() {
-    return this.noteForm.get("content")
+    return this.noteForm.get('subtitle')
   }
 
   ngOnInit(): void {
-    this.route.paramMap.subscribe((params) => {
-      this.noteId = params.get("id")
-      if (this.noteId) {
-        this.loadNote(this.noteId)
-      } else {
-        this.isLoading = false
-      }
-    })
+    // Load initial counts
+    this.sidebarService.loadCounts()
 
-    // Monitor title and subtitle length for warnings
-    this.title?.valueChanges.subscribe((value) => {
-      this.titleLengthWarning = value?.length >= 60
-    })
-
-    this.subtitle?.valueChanges.subscribe((value) => {
-      this.subtitleLengthWarning = value?.length >= 135
-    })
+    const id = this.route.snapshot.paramMap.get("id")
+    if (id) {
+      this.loadNote(id)
+    }
   }
 
-  loadNote(id: string): void {
+  private loadNote(id: string): void {
     this.isLoading = true
-
-    if (this.authService.isGuestMode()) {
-      const notes = this.notesService.getLocalNotes()
-      const note = notes.find((n) => n.id === id)
-      if (note) {
-        this.note = note
-        this.noteForm.patchValue({
-          title: note.title,
-          subtitle: note.subtitle,
-          content: note.content,
-        })
-        this.isLoading = false
-        return
-      }
-      this.isLoading = false
-      this.router.navigate(["/notes"])
-      return
-    }
-
     this.notesService.getNoteById(id).subscribe({
-      next: (note) => {
+      next: (note: Note) => {
         this.note = note
         this.noteForm.patchValue({
           title: note.title,
@@ -104,77 +122,36 @@ export class NoteEditorComponent implements OnInit {
         })
         this.isLoading = false
       },
-      error: (error) => {
+      error: (error: Error) => {
         console.error("Error loading note:", error)
         this.isLoading = false
-        this.router.navigate(["/notes"])
       },
     })
   }
 
   saveNote(): void {
-    if (this.noteForm.invalid || !this.noteId) return
-
-    this.isSaving = true
-
-    if (this.authService.isGuestMode()) {
-      const updatedNote: Note = {
-        ...this.note!,
+    if (this.noteForm.valid && this.note) {
+      this.isSaving = true
+      const updatedNote = {
+        ...this.note,
         ...this.noteForm.value,
-        updatedAt: new Date(),
       }
 
-      this.notesService.updateLocalNote(updatedNote)
-      // Add a small delay to show the "Saving..." state
-      setTimeout(() => {
-        this.isSaving = false
-        this.router.navigate(["/notes"])
-      }, 800) // 800ms delay to match the login/register delay in your auth service
-
-      return
-    }
-
-    this.notesService.updateNote(this.noteId, this.noteForm.value).subscribe({
-      next: (updatedNote) => {
-        this.note = updatedNote
-        this.isSaving = false
-        this.router.navigate(["/notes"])
-      },
-      error: (error) => {
-        console.error("Error saving note:", error)
-        this.isSaving = false
-        // Even if there's an error, try to navigate back
-        // The note might have been saved in the database but not updated in the local state
-        this.router.navigate(["/notes"])
-      },
-    })
-  }
-
-  deleteNote(): void {
-    if (!this.noteId) return
-
-    if (confirm("Are you sure you want to delete this note? This action cannot be undone.")) {
-      if (this.authService.isGuestMode()) {
-        this.notesService.deleteLocalNote(this.noteId)
-        this.router.navigate(["/notes"])
-        return
-      }
-
-      this.notesService.deleteNote(this.noteId).subscribe({
+      this.notesService.updateNote(this.note.id, updatedNote).subscribe({
         next: () => {
-          this.router.navigate(["/notes"])
+          this.isSaving = false
+          this.router.navigate(['/notes'])
         },
-        error: (error) => {
-          console.error("Error deleting note:", error)
-          // Try to navigate back anyway
-          this.router.navigate(["/notes"])
+        error: (error: Error) => {
+          console.error("Error saving note:", error)
+          this.isSaving = false
         },
       })
     }
   }
 
-  goBack(): void {
-    this.router.navigate(["/notes"])
+  convertToPermanentAccount(): void {
+    // Implement the logic to convert guest account to permanent account
+    console.log('Converting to permanent account...')
   }
 }
-
