@@ -13,86 +13,8 @@ import { Group } from '../../models/group.model';
     MatIconModule,
     ClickOutsideDirective
   ],
-  template: `
-    <div class="group-menu-container" (clickOutside)="closeMenu()">
-      <button class="menu-button" (click)="toggleMenu($event)">
-        <mat-icon>more_vert</mat-icon>
-      </button>
-      
-      <div *ngIf="isOpen" class="menu-dropdown" [@fadeIn]>
-        <button class="menu-item delete" (click)="onDelete($event)">
-          <mat-icon>delete_forever</mat-icon>
-          <span>Delete</span>
-        </button>
-      </div>
-    </div>
-  `,
-  styles: [`
-    .group-menu-container {
-      position: relative;
-    }
-    
-    .menu-button {
-      background: none;
-      border: none;
-      color: var(--text-color-light);
-      cursor: pointer;
-      padding: 0.25rem;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.3s ease;
-      
-      &:hover {
-        background-color: var(--surface-color);
-        color: var(--text-color);
-      }
-    }
-    
-    .menu-dropdown {
-      position: absolute;
-      top: 100%;
-      right: 0;
-      background-color: var(--background-color);
-      border-radius: 4px;
-      box-shadow: 0 2px 10px var(--shadow-color);
-      min-width: 180px;
-      z-index: 10;
-      overflow: hidden;
-    }
-    
-    .menu-item {
-      display: flex;
-      align-items: center;
-      padding: 0.75rem 1rem;
-      width: 100%;
-      background: none;
-      border: none;
-      text-align: left;
-      cursor: pointer;
-      color: var(--text-color);
-      transition: background-color 0.3s ease;
-      
-      &:hover {
-        background-color: var(--surface-color);
-      }
-      
-      mat-icon {
-        margin-right: 0.75rem;
-        font-size: 1.25rem;
-        color: var(--text-color-light);
-      }
-      
-      &.delete {
-        color: var(--error-color);
-        
-        mat-icon {
-          color: var(--error-color);
-        }
-      }
-    }
-  `],
+  templateUrl: './group-menu.component.html',
+  styleUrls: ['./group-menu.component.scss'],
   animations: [
     trigger('fadeIn', [
       transition(':enter', [

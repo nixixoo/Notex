@@ -19,7 +19,7 @@
         <mat-icon>arrow_back</mat-icon>
       </button>
       <div class="editor-actions">
-        <button class="save-btn" (click)="saveNote()" [disabled]="noteForm.invalid || isSaving">
+        <button *ngIf="isEditable" class="save-btn" (click)="saveNote()" [disabled]="noteForm.invalid || isSaving">
           {{ isSaving ? 'Saving...' : 'Save' }}
         </button>
       </div>
@@ -33,6 +33,11 @@
     <div *ngIf="!isLoading && !note" class="note-not-found">
       <p>Note not found</p>
       <button class="back-btn" (click)="location.back()">Go Back</button>
+    </div>
+
+    <div *ngIf="!isLoading && note && !isEditable" class="readonly-notice">
+      <mat-icon>info</mat-icon>
+      <span>This note is {{ note.status === 'archived' ? 'archived' : 'in trash' }} and cannot be edited. Restore it to make changes.</span>
     </div>
 
     <form *ngIf="!isLoading && note" [formGroup]="noteForm" class="note-form" [@fadeIn]>

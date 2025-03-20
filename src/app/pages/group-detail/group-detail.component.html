@@ -27,7 +27,7 @@
           <button class="back-button" routerLink="/groups">
             <mat-icon>arrow_back</mat-icon>
           </button>
-          <h1 class="group-title">{{ group.name }}</h1>
+          <h1 class="group-title" [title]="group?.name">{{ group?.name || '' }}</h1>
         </div>
         <div class="header-controls">
           <label class="switch">
@@ -35,7 +35,74 @@
             <span class="slider round"></span>
           </label>
           <span class="preview-label">Show Preview</span>
+          <button class="edit-group-btn" (click)="toggleEditGroupForm()">
+            <mat-icon>edit</mat-icon>
+            Edit Group
+          </button>
         </div>
+      </div>
+
+      <!-- Edit Group Form -->
+      <div *ngIf="showEditGroupForm" class="new-group-form-container" [@slideDown]>
+        <form [formGroup]="editGroupForm" (ngSubmit)="updateGroup()" class="new-group-form">
+          <div class="form-group">
+            <label for="name">Group Name</label>
+            <div class="input-wrapper">
+              <input 
+                type="text" 
+                id="name" 
+                formControlName="name" 
+                class="form-control"
+                [class.is-invalid]="name?.invalid && (name?.dirty || name?.touched)"
+                [maxlength]="NAME_MAX_LENGTH"
+              >
+            </div>
+            <div class="feedback-container">
+              <div class="feedback-left">
+                <div *ngIf="name?.invalid && (name?.dirty || name?.touched)" class="error-message">
+                  <span *ngIf="name?.errors?.['required']">Group name is required</span>
+                  <span *ngIf="name?.errors?.['maxlength']">Group name cannot exceed 50 characters</span>
+                </div>
+              </div>
+              <span class="character-counter" 
+                    [class.warning]="nameLengthWarning"
+                    [class.danger]="nameLengthDanger">
+                {{ name?.value?.length || 0 }}/{{ NAME_MAX_LENGTH }}
+              </span>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="description">Description</label>
+            <div class="input-wrapper">
+              <textarea 
+                id="description" 
+                formControlName="description" 
+                class="form-control"
+                [class.is-invalid]="description?.invalid && (description?.dirty || description?.touched)"
+                [maxlength]="DESCRIPTION_MAX_LENGTH"
+                rows="3"
+              ></textarea>
+            </div>
+            <div class="feedback-container">
+              <div class="feedback-left">
+                <div *ngIf="description?.invalid && (description?.dirty || description?.touched)" class="error-message">
+                  <span *ngIf="description?.errors?.['required']">Group description is required</span>
+                  <span *ngIf="description?.errors?.['maxlength']">Group description cannot exceed 150 characters</span>
+                </div>
+              </div>
+              <span class="character-counter" 
+                    [class.warning]="descriptionLengthWarning"
+                    [class.danger]="descriptionLengthDanger">
+                {{ description?.value?.length || 0 }}/{{ DESCRIPTION_MAX_LENGTH }}
+              </span>
+            </div>
+          </div>
+          
+          <button type="submit" class="submit-btn" [disabled]="editGroupForm.invalid || isLoading">
+            {{ isLoading ? 'Saving...' : 'Save Changes' }}
+          </button>
+        </form>
       </div>
 
       <!-- New Note Form -->
@@ -107,34 +174,40 @@
         <p>Loading notes...</p>
       </div>
 
-      <!-- Empty State -->
-      <div *ngIf="!isLoadingGroup && !isLoadingNotes && notes.length === 0" class="empty-notes" [@fadeInOut]>
-
-      </div>
-
-      <!-- Notes Grid -->
-      <div *ngIf="!isLoadingGroup && !isLoadingNotes" class="notes-grid"
-          [@listAnimation]="notes.length">
-        <!-- New Note Card -->
-        <div class="note-card add-note-card"
-            [class.centered-empty]="notes.length === 0"
-            (click)="toggleNewNoteForm()"
-            [@fadeInOut]>
+      <!-- Empty state with Add Note -->
+      <div *ngIf="!isLoadingGroup && !isLoadingNotes && notes.length === 0" 
+           class="notes-grid"
+           [@fadeInOut]>
+        <div class="note-card add-note-card centered-empty"
+            (click)="toggleNewNoteForm()">
           <div class="add-note-content">
             <mat-icon class="add-icon">note_add</mat-icon>
             <span class="add-text">New Note</span>
           </div>
         </div>
+      </div>
 
+      <!-- Notes Grid -->
+      <div *ngIf="!isLoadingGroup && !isLoadingNotes && notes.length > 0" 
+           class="notes-grid" 
+           [@listAnimation]="notes.length">
+        <div class="note-card add-note-card"
+            (click)="toggleNewNoteForm()">
+          <div class="add-note-content">
+            <mat-icon class="add-icon">note_add</mat-icon>
+            <span class="add-text">New Note</span>
+          </div>
+        </div>
+        
         <!-- Existing Notes -->
-        <div *ngFor="let note of notes; trackBy: trackNoteById" 
-            class="note-card"
-            [@fadeInOut]>
+        <div *ngFor="let note of notes; trackBy: trackNoteById" class="note-card">
           <div class="note-card-content" [routerLink]="['/notes', note.id]">
-            <h2 class="note-title">{{ note.title }}</h2>
-            <p class="note-subtitle">{{ note.subtitle }}</p>
+            <div class="note-text-wrapper">
+              <h2 class="note-title">{{ note.title }}</h2>
+              <p class="note-subtitle">{{ note.subtitle }}</p>
+            </div>
             <div *ngIf="showPreview" class="note-preview-container" [@previewExpand]>
-              <pre class="note-preview">{{ note.content | previewFormat }}</pre>
+              <pre class="note-preview" [class.empty]="!note.content">{{ note.content || "There's nothing here..." }}</pre>
             </div>
             <div class="note-footer">
               <span class="note-date">{{ note.updatedAt | date:'medium' }}</span>

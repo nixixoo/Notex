@@ -99,6 +99,52 @@ button {
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
+// Material Dialog Overrides
+.mat-mdc-dialog-container {
+  --mdc-dialog-container-color: var(--background-color) !important;
+}
+
+.cdk-overlay-container {
+  z-index: 9999;
+}
+
+.cdk-overlay-backdrop {
+  background: rgba(0, 0, 0, 0.5) !important;
+}
+
+.cdk-global-overlay-wrapper {
+  z-index: 9999;
+  display: flex;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  justify-content: center;
+  align-items: center;
+}
+
+.dark-theme-dialog {
+  .mat-mdc-dialog-container {
+    --mdc-dialog-container-color: var(--background-color) !important;
+  }
+
+  .mdc-dialog__surface {
+    background-color: var(--background-color) !important;
+  }
+
+  .mat-mdc-dialog-surface {
+    background: var(--background-color) !important;
+    color: var(--text-color) !important;
+  }
+}
+
+.app-dialog {
+  .mat-mdc-dialog-container {
+    padding: 0;
+  }
+}
+
 // Animations
 .fade-in {
   animation: fadeIn 0.3s ease-in-out;

@@ -266,7 +266,7 @@ export class GroupsService {
       args.push(groupData.description);
     }
 
-    sql += ` WHERE id = ? AND userId = ?`;
+    sql += ` WHERE id = ? AND userId = ? RETURNING *`;
     args.push(id, userId);
 
     return from(
@@ -275,24 +275,16 @@ export class GroupsService {
         args,
       }),
     ).pipe(
-      map(() => {
-        const currentGroups = this.groupsSubject.value;
-        const existingGroupIndex = currentGroups.findIndex((group) => group.id === id);
-        
-        if (existingGroupIndex === -1) {
-          console.warn('Group not found in local state - may have been filtered');
-          return {} as Group; // Return empty object, will be filtered later
+      map((result) => {
+        if (result.rows.length === 0) {
+          throw new Error("Group not found");
         }
-      
-        const updatedGroup: Group = {
-          ...currentGroups[existingGroupIndex],
-          ...(groupData.name !== undefined && { name: groupData.name }),
-          ...(groupData.description !== undefined && { description: groupData.description }),
-          updatedAt,
-        };
-      
-        const updatedGroups = [...currentGroups];
-        updatedGroups[existingGroupIndex] = updatedGroup;
+
+        const updatedGroup = this.mapGroup(result.rows[0]);
+        const currentGroups = this.groupsSubject.value;
+        const updatedGroups = currentGroups.map((group) => 
+          group.id === id ? updatedGroup : group
+        );
         this.groupsSubject.next(updatedGroups);
         return updatedGroup;
       }),

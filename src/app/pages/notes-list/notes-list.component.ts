@@ -2,6 +2,8 @@ import { Component, type OnInit, Inject } from "@angular/core"
 import { CommonModule } from "@angular/common"
 import { RouterLink, ActivatedRoute } from "@angular/router"
 import { FormBuilder, type FormGroup, ReactiveFormsModule, Validators } from "@angular/forms"
+import { MatIconModule } from "@angular/material/icon"
+import { MatDialog, MatDialogModule } from "@angular/material/dialog"
 import { NotesService } from "../../services/notes.service"
 import type { Note } from "../../models/note.model"
 import { animate, query, stagger, style, transition, trigger } from "@angular/animations"
@@ -11,7 +13,7 @@ import { AuthService } from "../../services/auth.service"
 import { Router } from "@angular/router"
 import { SidebarComponent } from "../../components/sidebar/sidebar.component"
 import { NoteMenuComponent } from "../../components/note-menu/note-menu.component"
-import { MatIconModule } from "@angular/material/icon"
+import { ConfirmDialogComponent } from "../../components/confirm-dialog/confirm-dialog.component"
 import { SidebarService } from "../../services/sidebar.service"
 import { GroupsService } from "../../services/groups.service"
 
@@ -33,6 +35,7 @@ interface CreateNoteRequest {
     SidebarComponent,
     NoteMenuComponent,
     MatIconModule,
+    MatDialogModule
   ],
   templateUrl: "./notes-list.component.html",
   styleUrls: ["./notes-list.component.scss"],
@@ -118,7 +121,8 @@ export class NotesListComponent implements OnInit {
     @Inject(Router) public router: Router,
     @Inject(ActivatedRoute) private route: ActivatedRoute,
     public sidebarService: SidebarService,
-    @Inject(GroupsService) private groupsService: GroupsService
+    @Inject(GroupsService) private groupsService: GroupsService,
+    private dialog: MatDialog
   ) {
     this.newNoteForm = this.fb.group({
       title: ['', [
@@ -303,17 +307,33 @@ export class NotesListComponent implements OnInit {
   }
 
   onDelete(note: Note): void {
-    if (confirm("Are you sure you want to permanently delete this note? This action cannot be undone.")) {
-      this.notesService.deleteNote(note.id).subscribe({
-        next: () => {
-          this.notes = this.notes.filter((n) => n.id !== note.id)
-          this.loadNoteCounts()
-        },
-        error: (error) => {
-          console.error("Error deleting note:", error)
-        },
-      })
-    }
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      data: {
+        title: 'Delete Forever',
+        message: `Are you sure you want to permanently delete "${note.title}"? This action cannot be undone.`,
+        confirmText: 'Delete Forever',
+        cancelText: 'Cancel',
+        type: 'warning'
+      },
+      panelClass: document.body.classList.contains('dark-theme') ? 'dark-theme-dialog' : '',
+      disableClose: true,
+      autoFocus: true,
+      restoreFocus: true
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.notesService.deleteNote(note.id).subscribe({
+          next: () => {
+            this.notes = this.notes.filter((n) => n.id !== note.id)
+            this.loadNoteCounts()
+          },
+          error: (error) => {
+            console.error("Error deleting note:", error)
+          }
+        });
+      }
+    });
   }
 
   getPageTitle(): string {

@@ -44,10 +44,13 @@ import { NoteGroupMenuComponent } from "../../components/note-group-menu/note-gr
       transition("* => *", [
         query(":enter", [
           style({ opacity: 0, transform: "translateY(15px)" }),
-          stagger(50, [
+          stagger(100, [
             animate("0.3s ease-out", style({ opacity: 1, transform: "translateY(0)" })),
           ]),
         ], { optional: true }),
+        query(":leave", [
+          animate("0.3s ease-out", style({ opacity: 0, transform: "translateX(30px)" }))
+        ], { optional: true })
       ]),
     ]),
     trigger("previewExpand", [
@@ -77,6 +80,7 @@ export class GroupDetailComponent implements OnInit, OnDestroy {
   notes: Note[] = [];
   showPreview = false;
   showNewNoteForm = false;
+  showEditGroupForm = false;
   isLoading = false;
   isLoadingGroup = false;
   isLoadingNotes = false;
@@ -86,13 +90,20 @@ export class GroupDetailComponent implements OnInit, OnDestroy {
   groupCount = 0;
   private subscriptions: Subscription[] = [];
   newNoteForm: FormGroup;
+  editGroupForm: FormGroup;
   titleLengthWarning = false;
   titleLengthDanger = false;
   subtitleLengthWarning = false;
   subtitleLengthDanger = false;
+  nameLengthWarning = false;
+  nameLengthDanger = false;
+  descriptionLengthWarning = false;
+  descriptionLengthDanger = false;
 
   readonly TITLE_MAX_LENGTH = 75;
   readonly SUBTITLE_MAX_LENGTH = 150;
+  readonly NAME_MAX_LENGTH = 50;
+  readonly DESCRIPTION_MAX_LENGTH = 150;
 
   constructor(
     private route: ActivatedRoute,
@@ -113,6 +124,17 @@ export class GroupDetailComponent implements OnInit, OnDestroy {
         Validators.maxLength(this.SUBTITLE_MAX_LENGTH)
       ]],
       content: ['']
+    });
+
+    this.editGroupForm = this.fb.group({
+      name: ['', [
+        Validators.required,
+        Validators.maxLength(this.NAME_MAX_LENGTH)
+      ]],
+      description: ['', [
+        Validators.required,
+        Validators.maxLength(this.DESCRIPTION_MAX_LENGTH)
+      ]]
     });
 
     // Monitor title and subtitle length
@@ -137,6 +159,18 @@ export class GroupDetailComponent implements OnInit, OnDestroy {
         this.subtitle?.setValue(value.slice(0, this.SUBTITLE_MAX_LENGTH), { emitEvent: false })
       }
     })
+
+    this.editGroupForm.get('name')?.valueChanges.subscribe(value => {
+      const length = value?.length || 0;
+      this.nameLengthWarning = length >= Math.floor(this.NAME_MAX_LENGTH * 0.8);
+      this.nameLengthDanger = length >= this.NAME_MAX_LENGTH * 0.9;
+    });
+
+    this.editGroupForm.get('description')?.valueChanges.subscribe(value => {
+      const length = value?.length || 0;
+      this.descriptionLengthWarning = length >= Math.floor(this.DESCRIPTION_MAX_LENGTH * 0.8);
+      this.descriptionLengthDanger = length >= this.DESCRIPTION_MAX_LENGTH * 0.9;
+    });
   }
 
   ngOnInit(): void {
@@ -158,6 +192,10 @@ export class GroupDetailComponent implements OnInit, OnDestroy {
         next: (group) => {
           this.group = group
           this.isLoadingGroup = false
+          this.editGroupForm.patchValue({
+            name: group.name,
+            description: group.description
+          });
           this.loadNotesForGroup(groupId)
         },
         error: (error) => {
@@ -215,6 +253,19 @@ export class GroupDetailComponent implements OnInit, OnDestroy {
     }
   }
 
+  toggleEditGroupForm(): void {
+    this.showEditGroupForm = !this.showEditGroupForm;
+    if (!this.showEditGroupForm) {
+      this.editGroupForm.reset();
+      if (this.group) {
+        this.editGroupForm.patchValue({
+          name: this.group.name,
+          description: this.group.description
+        });
+      }
+    }
+  }
+
   createNote(): void {
     if (this.newNoteForm.invalid || !this.group) return;
     
@@ -249,6 +300,29 @@ export class GroupDetailComponent implements OnInit, OnDestroy {
         }
       })
     )
+  }
+
+  updateGroup(): void {
+    if (this.editGroupForm.valid && this.group) {
+      this.isLoading = true;
+      const updatedGroup = {
+        ...this.group,
+        name: this.editGroupForm.value.name,
+        description: this.editGroupForm.value.description
+      };
+
+      this.groupsService.updateGroup(updatedGroup.id, updatedGroup).subscribe({
+        next: (group) => {
+          this.group = { ...group }; // Create a new reference to trigger change detection
+          this.showEditGroupForm = false;
+          this.isLoading = false;
+        },
+        error: (error) => {
+          console.error('Error updating group:', error);
+          this.isLoading = false;
+        }
+      });
+    }
   }
 
   removeNoteFromGroup(note: Note): void {
@@ -363,6 +437,8 @@ export class GroupDetailComponent implements OnInit, OnDestroy {
   // Getter methods for form controls
   get title() { return this.newNoteForm.get('title'); }
   get subtitle() { return this.newNoteForm.get('subtitle'); }
+  get name() { return this.editGroupForm.get('name'); }
+  get description() { return this.editGroupForm.get('description'); }
 
   ngOnDestroy(): void {
     this.subscriptions.forEach(sub => sub.unsubscribe())

@@ -10,8 +10,6 @@
   transition: margin-left 0.3s ease;
 }
 
-
-
 .notes-container {
   padding: 1rem 0;
   min-height: 100vh;
@@ -247,19 +245,20 @@ input:checked + .slider:before {
     transition: opacity 0.3s ease; 
   }
 }
+
 .notes-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 1.5rem;
-  padding: 1rem 0;
+  padding: 1.5rem;
 }
 
 .note-card {
-  position: relative;
   background-color: var(--background-color);
   border-radius: 8px;
   box-shadow: 0 2px 8px var(--shadow-color);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: all 0.3s ease;
+  position: relative;
   min-height: 200px;
   display: flex;
   flex-direction: column;
@@ -288,9 +287,46 @@ input:checked + .slider:before {
 .note-card-content {
   padding: 1.5rem;
   cursor: pointer;
-  flex: 1;
+  position: relative;
   display: flex;
   flex-direction: column;
+  height: 100%;
+}
+
+.note-text-wrapper {
+  max-width: calc(100% - 40px); /* Account for menu button */
+}
+
+.note-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-color);
+  margin: 0 0 0.5rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.note-subtitle {
+  font-size: 1rem;
+  color: var(--text-color-light);
+  line-height: 1.5;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.note-footer {
+  margin-top: auto;
+  text-align: right;
+}
+
+.note-date {
+  font-size: 0.875rem;
+  color: var(--text-color-light);
 }
 
 .note-menu {
@@ -298,20 +334,6 @@ input:checked + .slider:before {
   top: 1rem;
   right: 1rem;
   z-index: 5;
-}
-
-.note-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--text-color);
-  margin-bottom: 0.5rem;
-  padding-right: 2rem; 
-}
-
-.note-subtitle {
-  color: var(--text-color-light);
-  margin-bottom: 1rem;
-  flex-grow: 1;
 }
 
 .note-preview-container {
@@ -323,19 +345,22 @@ input:checked + .slider:before {
 }
 
 .note-preview {
+  font-family: inherit;
+  font-size: 0.875rem;
   color: var(--text-color-light);
-  font-size: 0.9rem;
   margin: 0;
   white-space: pre-wrap;
-  word-wrap: break-word;
-  font-family: inherit;
-}
+  max-height: 125px; /* Increased to accommodate 5 lines */
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  line-clamp: 5;
+  -webkit-box-orient: vertical;
 
-.note-footer {
-  display: flex;
-  justify-content: flex-end;
-  font-size: 0.875rem;
-  color: #888;
+  &.empty {
+    color: var(--text-color-lighter);
+    font-style: italic;
+  }
 }
 
 .guest-banner {
@@ -371,6 +396,7 @@ input:checked + .slider:before {
     }
   }
 }
+
 .add-note-card {
   background-color: var(--surface-color);
   border: 2px dashed var(--border-color);

@@ -1,0 +1,104 @@
+:host {
+  display: block;
+}
+
+.confirm-dialog {
+  padding: 1.5rem;
+  max-width: 400px;
+  text-align: center;
+  background-color: var(--background-color);
+  color: var(--text-color);
+}
+
+.dialog-icon {
+  margin-bottom: 1rem;
+
+  mat-icon {
+    font-size: 3rem;
+    width: 3rem;
+    height: 3rem;
+    color: var(--primary-purple);
+  }
+
+  &.warning mat-icon {
+    color: var(--error-color);
+  }
+}
+
+.dialog-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 0.5rem;
+}
+
+.dialog-message {
+  color: var(--text-color-light);
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.cancel-btn {
+  color: var(--text-color);
+  background: none;
+  border: 1px solid var(--border-color);
+  padding: 0.5rem 1.5rem;
+  border-radius: 4px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background-color: var(--surface-color);
+  }
+}
+
+.confirm-btn {
+  color: var(--background-color);
+  background-color: var(--primary-purple);
+  border: none;
+  padding: 0.5rem 1.5rem;
+  border-radius: 4px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background-color: var(--secondary-purple);
+  }
+
+  &.warning {
+    background-color: var(--error-color);
+
+    &:hover {
+      background-color: #d32f2f;
+    }
+  }
+}
+
+:host-context(.dark-theme-dialog) {
+  .confirm-dialog {
+    background-color: var(--background-color);
+  }
+
+  .dialog-title {
+    color: var(--text-color);
+  }
+
+  .dialog-message {
+    color: var(--text-color-light);
+  }
+
+  .cancel-btn {
+    color: var(--text-color);
+    border-color: var(--border-color);
+
+    &:hover {
+      background-color: var(--surface-color);
+    }
+  }
+}

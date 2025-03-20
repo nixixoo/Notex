@@ -10,6 +10,7 @@ import { GroupsService } from "../../services/groups.service"
 import { SidebarComponent } from "../../components/sidebar/sidebar.component";
 import { SidebarService } from "../../services/sidebar.service";
 import { MatIconModule } from "@angular/material/icon"
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: "app-note-editor",
@@ -36,6 +37,7 @@ export class NoteEditorComponent implements OnInit {
   archivedCount = 0
   trashedCount = 0
   groupCount = 0
+  isEditable = true
 
   readonly TITLE_MAX_LENGTH = 75
   readonly SUBTITLE_MAX_LENGTH = 150
@@ -110,43 +112,58 @@ export class NoteEditorComponent implements OnInit {
     }
   }
 
-  private loadNote(id: string): void {
+  async loadNote(id: string): Promise<void> {
     this.isLoading = true
-    this.notesService.getNoteById(id).subscribe({
-      next: (note: Note) => {
+    try {
+      const note = await firstValueFrom(this.notesService.getNoteById(id))
+      if (note) {
         this.note = note
+        // Disable editing for archived or trashed notes
+        this.isEditable = note.status === 'active'
+        
         this.noteForm.patchValue({
           title: note.title,
           subtitle: note.subtitle,
-          content: note.content,
+          content: note.content
         })
-        this.isLoading = false
-      },
-      error: (error: Error) => {
-        console.error("Error loading note:", error)
-        this.isLoading = false
-      },
-    })
+
+        if (!this.isEditable) {
+          this.noteForm.disable()
+        }
+      }
+    } catch (error) {
+      console.error('Error loading note:', error)
+    } finally {
+      this.isLoading = false
+    }
   }
 
-  saveNote(): void {
-    if (this.noteForm.valid && this.note) {
-      this.isSaving = true
+  async saveNote(): Promise<void> {
+    if (this.noteForm.invalid || !this.note || !this.isEditable) {
+      return
+    }
+
+    this.isSaving = true
+    try {
       const updatedNote = {
         ...this.note,
-        ...this.noteForm.value,
+        title: this.title?.value,
+        subtitle: this.subtitle?.value,
+        content: this.noteForm.get('content')?.value
       }
 
-      this.notesService.updateNote(this.note.id, updatedNote).subscribe({
-        next: () => {
-          this.isSaving = false
-          this.router.navigate(['/notes'])
-        },
-        error: (error: Error) => {
-          console.error("Error saving note:", error)
-          this.isSaving = false
-        },
-      })
+      await firstValueFrom(this.notesService.updateNote(this.note.id, updatedNote))
+      
+      // Navigate back to group if note belongs to a group
+      if (this.note.groupId) {
+        this.router.navigate(['/groups', this.note.groupId])
+      } else {
+        this.location.back()
+      }
+    } catch (error) {
+      console.error('Error saving note:', error)
+    } finally {
+      this.isSaving = false
     }
   }
 

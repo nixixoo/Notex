@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
+import { MatDialogModule } from '@angular/material/dialog';
+import { MatDialog } from '@angular/material/dialog';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { trigger, transition, style, animate, query, stagger } from '@angular/animations';
 import { GroupsService } from '../../services/groups.service';
@@ -9,6 +11,7 @@ import { NotesService } from '../../services/notes.service';
 import { AuthService } from '../../services/auth.service';
 import { SidebarComponent } from '../../components/sidebar/sidebar.component';
 import { GroupMenuComponent } from '../../components/group-menu/group-menu.component';
+import { ConfirmDialogComponent } from '../../components/confirm-dialog/confirm-dialog.component';
 import { Group } from '../../models/group.model';
 import { Router } from '@angular/router';
 import { SidebarService } from '../../services/sidebar.service';
@@ -20,6 +23,7 @@ import { SidebarService } from '../../services/sidebar.service';
     CommonModule,
     RouterModule,
     MatIconModule,
+    MatDialogModule,
     ReactiveFormsModule,
     SidebarComponent,
     GroupMenuComponent
@@ -94,7 +98,8 @@ export class GroupsListComponent implements OnInit {
     public authService: AuthService,
     public router: Router,
     public sidebarService: SidebarService,
-    private notesService: NotesService
+    private notesService: NotesService,
+    private dialog: MatDialog
   ) {
     this.newGroupForm = this.fb.group({
       name: ['', [
@@ -200,26 +205,37 @@ export class GroupsListComponent implements OnInit {
     }
   }
 
-  deleteGroup(group: Group, event?: MouseEvent) {
-    if (event) {
-      event.stopPropagation();
-    }
-    
-    if (confirm('Are you sure you want to delete this group?')) {
-      this.groupsService.deleteGroup(group.id).subscribe({
-        next: () => {
-          this.groups = this.groups.filter(g => g.id !== group.id);
-          this.groupCount = this.groups.length;
-          
-          if (this.groups.length === 0) {
-            this.showEmptyMessage = true;
+  deleteGroup(group: Group) {
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      data: {
+        title: 'Delete Group',
+        message: `Are you sure you want to delete "${group.name}"? This action cannot be undone.`,
+        confirmText: 'Delete',
+        cancelText: 'Cancel',
+        type: 'warning'
+      },
+      panelClass: document.body.classList.contains('dark-theme') ? 'dark-theme-dialog' : '',
+      disableClose: true,
+      autoFocus: true,
+      restoreFocus: true
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.groupsService.deleteGroup(group.id).subscribe({
+          next: () => {
+            this.groups = this.groups.filter(g => g.id !== group.id);
+            this.groupCount = this.groups.length;
+            if (this.groups.length === 0) {
+              this.showEmptyMessage = true;
+            }
+          },
+          error: (error) => {
+            console.error('Error deleting group:', error);
           }
-        },
-        error: (error) => {
-          console.error('Error deleting group:', error);
-        }
-      });
-    }
+        });
+      }
+    });
   }
 
   trackGroupById(index: number, group: Group): string {
