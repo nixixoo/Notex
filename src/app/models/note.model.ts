@@ -9,6 +9,7 @@ export interface Note {
   isLocal?: boolean 
   status?: "active" | "archived" | "trashed"
   groupId?: string | null
+  color?: string
 }
 
 export interface CreateNoteRequest {
@@ -17,6 +18,7 @@ export interface CreateNoteRequest {
   content?: string
   userId?: string
   groupId?: string | null
+  color?: string
 }
 
 export interface UpdateNoteRequest {
@@ -25,4 +27,5 @@ export interface UpdateNoteRequest {
   content?: string
   status?: "active" | "archived" | "trashed"
   groupId?: string | null
+  color?: string
 }

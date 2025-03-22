@@ -21,6 +21,7 @@ interface CreateNoteRequest {
   title: string
   subtitle: string
   content?: string
+  color?: string
 }
 
 @Component({
@@ -110,6 +111,17 @@ export class NotesListComponent implements OnInit {
   titleLengthDanger = false
   subtitleLengthWarning = false
   subtitleLengthDanger = false
+  
+  // Color options for notes
+  colorOptions = [
+    { name: 'purple', value: '#bf9dfb' },
+    { name: 'blue', value: '#9fdeff' },
+    { name: 'green', value: '#b5e9d3' },
+    { name: 'yellow', value: '#ffe380' },
+    { name: 'orange', value: '#ffc082' },
+    { name: 'none', value: '' }
+  ]
+  selectedColor: string = '';
 
   readonly TITLE_MAX_LENGTH = 75
   readonly SUBTITLE_MAX_LENGTH = 150
@@ -133,7 +145,8 @@ export class NotesListComponent implements OnInit {
         Validators.required,
         Validators.maxLength(this.SUBTITLE_MAX_LENGTH)
       ]],
-      content: ['']
+      content: [''],
+      color: ['']
     });
 
     // Monitor title and subtitle length
@@ -161,10 +174,15 @@ export class NotesListComponent implements OnInit {
   }
 
   get title() {
-    return this.newNoteForm.get("title")
+    return this.newNoteForm.get('title')
   }
+
   get subtitle() {
-    return this.newNoteForm.get("subtitle")
+    return this.newNoteForm.get('subtitle')
+  }
+  
+  get color() {
+    return this.newNoteForm.get('color')
   }
 
   trackNoteById(index: number, note: Note): string {
@@ -182,8 +200,6 @@ export class NotesListComponent implements OnInit {
       },
     })
   }
-
-  
 
   ngOnInit(): void {
     this.route.data.subscribe((data) => {
@@ -241,19 +257,24 @@ export class NotesListComponent implements OnInit {
     this.showNewNoteForm = !this.showNewNoteForm
     if (!this.showNewNoteForm) {
       this.newNoteForm.reset()
+      this.selectedColor = '';
     }
   }
 
   createNote(): void {
-    if (this.newNoteForm.invalid) return
-
-    this.isLoading = true
-
-    const noteData: CreateNoteRequest = {
-      ...this.newNoteForm.value,
+    if (this.newNoteForm.invalid) {
+      return
     }
 
-    this.notesService.createNote(noteData).subscribe({
+    this.isLoading = true
+    const newNote = {
+      title: this.title?.value,
+      subtitle: this.subtitle?.value,
+      content: this.newNoteForm.get('content')?.value || '',
+      color: this.selectedColor || ''
+    }
+
+    this.notesService.createNote(newNote).subscribe({
       next: (note) => {
         if (this.currentStatus === "active") {
           this.notes = [note, ...this.notes]
@@ -261,12 +282,13 @@ export class NotesListComponent implements OnInit {
         this.loadNoteCounts()
         this.isLoading = false
         this.newNoteForm.reset()
+        this.selectedColor = '';
         this.showNewNoteForm = false
       },
       error: (error) => {
         console.error("Error creating note:", error)
         this.isLoading = false
-      },
+      }
     })
   }
 
@@ -349,5 +371,10 @@ export class NotesListComponent implements OnInit {
 
   stopPropagation(event: Event): void {
     event.stopPropagation()
+  }
+
+  setNoteColor(colorValue: string): void {
+    this.selectedColor = colorValue;
+    this.color?.setValue(colorValue);
   }
 }

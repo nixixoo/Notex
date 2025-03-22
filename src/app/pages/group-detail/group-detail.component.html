@@ -99,6 +99,23 @@
             </div>
           </div>
           
+          <!-- Color picker for group -->
+          <div class="form-group color-picker-container">
+            <label>Group Color:</label>
+            <div class="color-options">
+              <div 
+                *ngFor="let colorOption of colorOptions" 
+                class="color-option" 
+                [style.background-color]="colorOption.value"
+                [class.selected]="selectedColor === colorOption.value"
+                [class.no-color]="colorOption.name === 'none'"
+                (click)="setNoteColor(colorOption.value)"
+                [attr.title]="colorOption.name">
+                <mat-icon *ngIf="selectedColor === colorOption.value">check</mat-icon>
+              </div>
+            </div>
+          </div>
+          
           <button type="submit" class="submit-btn" [disabled]="editGroupForm.invalid || isLoading">
             {{ isLoading ? 'Saving...' : 'Save Changes' }}
           </button>
@@ -162,6 +179,23 @@
             </div>
           </div>
           
+          <!-- Color picker -->
+          <div class="form-group color-picker-container">
+            <label>Note Color:</label>
+            <div class="color-options">
+              <div 
+                *ngFor="let colorOption of colorOptions" 
+                class="color-option" 
+                [style.background-color]="colorOption.value"
+                [class.selected]="selectedColor === colorOption.value"
+                [class.no-color]="colorOption.name === 'none'"
+                (click)="setNoteColor(colorOption.value)"
+                [attr.title]="colorOption.name">
+                <mat-icon *ngIf="selectedColor === colorOption.value">check</mat-icon>
+              </div>
+            </div>
+          </div>
+          
           <button type="submit" class="submit-btn" [disabled]="newNoteForm.invalid || isLoading">
             {{ isLoading ? 'Creating...' : 'Create Note' }}
           </button>
@@ -176,9 +210,9 @@
 
       <!-- Empty state with Add Note -->
       <div *ngIf="!isLoadingGroup && !isLoadingNotes && notes.length === 0" 
-           class="notes-grid"
+           class="empty-notes-container"
            [@fadeInOut]>
-        <div class="note-card add-note-card centered-empty"
+        <div class="empty-note-card"
             (click)="toggleNewNoteForm()">
           <div class="add-note-content">
             <mat-icon class="add-icon">note_add</mat-icon>
@@ -200,7 +234,10 @@
         </div>
         
         <!-- Existing Notes -->
-        <div *ngFor="let note of notes; trackBy: trackNoteById" class="note-card">
+        <div *ngFor="let note of notes; trackBy: trackNoteById" 
+             class="note-card"
+             [ngClass]="{'colored-note': note.color}"
+             [style.backgroundColor]="note.color">
           <div class="note-card-content" [routerLink]="['/notes', note.id]">
             <div class="note-text-wrapper">
               <h2 class="note-title">{{ note.title }}</h2>

@@ -86,6 +86,17 @@ export class GroupsListComponent implements OnInit {
   readonly NAME_MAX_LENGTH = 50;
   readonly DESCRIPTION_MAX_LENGTH = 150;
 
+  // Color options for groups
+  colorOptions = [
+    { name: 'purple', value: '#bf9dfb' },
+    { name: 'blue', value: '#9fdeff' },
+    { name: 'green', value: '#b5e9d3' },
+    { name: 'yellow', value: '#ffe380' },
+    { name: 'orange', value: '#ffc082' },
+    { name: 'none', value: '' }
+  ];
+  selectedColor: string = '';
+
   // Sidebar counts
   activeCount = 0;
   archivedCount = 0;
@@ -109,7 +120,8 @@ export class GroupsListComponent implements OnInit {
       description: ['', [
         Validators.required,
         Validators.maxLength(this.DESCRIPTION_MAX_LENGTH)
-      ]]
+      ]],
+      color: ['']
     });
 
     // Monitor name and description length
@@ -180,6 +192,7 @@ export class GroupsListComponent implements OnInit {
     this.showNewGroupForm = !this.showNewGroupForm;
     if (!this.showNewGroupForm) {
       this.newGroupForm.reset();
+      this.selectedColor = '';
     }
   }
 
@@ -194,6 +207,7 @@ export class GroupsListComponent implements OnInit {
           this.groupCount = this.groups.length;
           this.showNewGroupForm = false;
           this.newGroupForm.reset();
+          this.selectedColor = '';
           this.isLoading = false;
           this.showEmptyMessage = false;
         },
@@ -257,5 +271,15 @@ export class GroupsListComponent implements OnInit {
 
   get description() {
     return this.newGroupForm.get('description');
+  }
+  
+  get color() {
+    return this.newGroupForm.get('color');
+  }
+  
+  // Set the selected color for the group
+  setGroupColor(colorValue: string): void {
+    this.selectedColor = colorValue;
+    this.color?.setValue(colorValue);
   }
 }

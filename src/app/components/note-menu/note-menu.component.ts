@@ -43,6 +43,15 @@ export class NoteMenuComponent implements OnDestroy{
 
   isOpen = false
 
+  get menuButtonStyle() {
+    if (this.note.color) {
+      return {
+        '--hover-bg-color': 'rgba(0, 0, 0, 0.3)'
+      };
+    }
+    return {};
+  }
+
   toggleMenu(event: Event): void {
     event.stopPropagation();
     if (!this.isOpen) {
@@ -84,4 +93,3 @@ export class NoteMenuComponent implements OnDestroy{
     this.menuSub.unsubscribe();
   }
 }
-

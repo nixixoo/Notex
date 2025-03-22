@@ -6,15 +6,18 @@ export interface Group {
   updatedAt: Date;
   userId: string;
   isLocal?: boolean;
+  color?: string;
 }
 
 export interface CreateGroupRequest {
   name: string;
   description: string;
   userId?: string;
+  color?: string;
 }
 
 export interface UpdateGroupRequest {
   name?: string;
   description?: string;
+  color?: string;
 }

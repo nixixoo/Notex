@@ -11,7 +11,7 @@ import { AuthService } from "../../services/auth.service"
 import { SidebarService } from "../../services/sidebar.service"
 import { SidebarComponent } from "../../components/sidebar/sidebar.component"
 import { PreviewFormatPipe } from "../../pipes/preview-format.pipe"
-import { Group } from "../../models/group.model"
+import { Group, UpdateGroupRequest } from "../../models/group.model"
 import { Note, UpdateNoteRequest, CreateNoteRequest } from "../../models/note.model"
 import { NoteGroupMenuComponent } from "../../components/note-group-menu/note-group-menu.component"
 
@@ -99,7 +99,15 @@ export class GroupDetailComponent implements OnInit, OnDestroy {
   nameLengthDanger = false;
   descriptionLengthWarning = false;
   descriptionLengthDanger = false;
-
+  colorOptions = [
+    { name: 'purple', value: '#bf9dfb' },
+    { name: 'blue', value: '#9fdeff' },
+    { name: 'green', value: '#b5e9d3' },
+    { name: 'yellow', value: '#ffe380' },
+    { name: 'orange', value: '#ffc082' },
+    { name: 'none', value: '' }
+  ];
+  selectedColor: string = '';
   readonly TITLE_MAX_LENGTH = 75;
   readonly SUBTITLE_MAX_LENGTH = 150;
   readonly NAME_MAX_LENGTH = 50;
@@ -244,25 +252,28 @@ export class GroupDetailComponent implements OnInit, OnDestroy {
     if (this.showNewNoteForm) {
       this.showNewNoteForm = false;
       this.newNoteForm.reset();
+      this.selectedColor = '';
     } else {
       this.showNewNoteForm = true;
       // Reset and mark as pristine to ensure proper button state
       this.newNoteForm.reset();
       this.newNoteForm.markAsPristine();
       this.newNoteForm.markAsUntouched();
+      this.selectedColor = '';
     }
   }
 
   toggleEditGroupForm(): void {
     this.showEditGroupForm = !this.showEditGroupForm;
-    if (!this.showEditGroupForm) {
+    if (this.showEditGroupForm && this.group) {
+      this.editGroupForm.patchValue({
+        name: this.group.name,
+        description: this.group.description
+      });
+      this.selectedColor = this.group.color || '';
+    } else {
       this.editGroupForm.reset();
-      if (this.group) {
-        this.editGroupForm.patchValue({
-          name: this.group.name,
-          description: this.group.description
-        });
-      }
+      this.selectedColor = '';
     }
   }
 
@@ -276,7 +287,8 @@ export class GroupDetailComponent implements OnInit, OnDestroy {
       title: formValue.title || '',
       subtitle: formValue.subtitle || '',
       content: '',
-      groupId: this.group.id
+      groupId: this.group.id,
+      color: this.selectedColor || ''
     };
 
     this.subscriptions.push(
@@ -285,6 +297,7 @@ export class GroupDetailComponent implements OnInit, OnDestroy {
           this.isLoading = false
           this.newNoteForm.reset()
           this.showNewNoteForm = false
+          this.selectedColor = ''
 
           // Reload notes for the group
           if (this.group) {
@@ -305,13 +318,13 @@ export class GroupDetailComponent implements OnInit, OnDestroy {
   updateGroup(): void {
     if (this.editGroupForm.valid && this.group) {
       this.isLoading = true;
-      const updatedGroup = {
-        ...this.group,
+      const updatedGroup: UpdateGroupRequest = {
         name: this.editGroupForm.value.name,
-        description: this.editGroupForm.value.description
+        description: this.editGroupForm.value.description,
+        color: this.selectedColor
       };
 
-      this.groupsService.updateGroup(updatedGroup.id, updatedGroup).subscribe({
+      this.groupsService.updateGroup(this.group.id, updatedGroup).subscribe({
         next: (group) => {
           this.group = { ...group }; // Create a new reference to trigger change detection
           this.showEditGroupForm = false;
@@ -432,6 +445,10 @@ export class GroupDetailComponent implements OnInit, OnDestroy {
 
   convertToPermanentAccount(): void {
     this.router.navigate(['/register'], { queryParams: { fromGuest: 'true' } })
+  }
+
+  setNoteColor(colorValue: string): void {
+    this.selectedColor = colorValue;
   }
 
   // Getter methods for form controls

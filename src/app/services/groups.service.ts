@@ -35,6 +35,7 @@ export class GroupsService {
    * - createdAt (DATETIME DEFAULT CURRENT_TIMESTAMP)
    * - updatedAt (DATETIME DEFAULT CURRENT_TIMESTAMP)
    * - userId (TEXT NOT NULL, FOREIGN KEY references users(id) ON DELETE CASCADE)
+   * - color (TEXT)
    *
    * Also adds the groupId column to the notes table if it doesn't exist.
    */
@@ -48,6 +49,7 @@ export class GroupsService {
           createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
           updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
           userId TEXT NOT NULL,
+          color TEXT,
           FOREIGN KEY(userId) REFERENCES users(id) ON DELETE CASCADE
         )
       `);
@@ -60,6 +62,18 @@ export class GroupsService {
         if (!columns.includes('groupId')) {
           await this.client.execute(`
             ALTER TABLE notes ADD COLUMN groupId TEXT
+          `);
+        }
+      });
+      
+      // Add color column to groups table if it doesn't exist
+      await this.client.execute(`
+        PRAGMA table_info(groups)
+      `).then(async (result) => {
+        const columns = result.rows.map(row => row['name']);
+        if (!columns.includes('color')) {
+          await this.client.execute(`
+            ALTER TABLE groups ADD COLUMN color TEXT
           `);
         }
       });
@@ -161,6 +175,7 @@ export class GroupsService {
         updatedAt: new Date(),
         userId: this.GUEST_USER_ID,
         isLocal: true,
+        color: groupData.color || '',
       };
 
       // Update local storage
@@ -193,12 +208,13 @@ export class GroupsService {
         createdAt: new Date(now),
         updatedAt: new Date(now),
         userId: currentUser.id,
+        color: groupData.color || '',
       };
 
       return from(
         this.client.execute({
-          sql: "INSERT INTO groups (id, name, description, createdAt, updatedAt, userId) VALUES (?, ?, ?, ?, ?, ?)",
-          args: [id, groupData.name, groupData.description, now, now, currentUser.id],
+          sql: "INSERT INTO groups (id, name, description, createdAt, updatedAt, userId, color) VALUES (?, ?, ?, ?, ?, ?, ?)",
+          args: [id, groupData.name, groupData.description, now, now, currentUser.id, groupData.color || null],
         }),
       ).pipe(
         map(() => {
@@ -264,6 +280,11 @@ export class GroupsService {
     if (groupData.description !== undefined) {
       sql += `, description = ?`;
       args.push(groupData.description);
+    }
+    
+    if (groupData.color !== undefined) {
+      sql += `, color = ?`;
+      args.push(groupData.color);
     }
 
     sql += ` WHERE id = ? AND userId = ? RETURNING *`;
@@ -396,6 +417,7 @@ export class GroupsService {
       createdAt: new Date(row["createdAt"] as string),
       updatedAt: new Date(row["updatedAt"] as string),
       userId: row["userId"] as string,
+      color: row["color"] as string || '',
     };
   }
 
@@ -410,6 +432,7 @@ export class GroupsService {
       userId: row["userId"] as string,
       status: ((row["status"] as string) || "active") as "active" | "archived" | "trashed",
       groupId: (row["groupId"] as string) || undefined,
+      color: row["color"] as string || ''
     }));
   }
 }

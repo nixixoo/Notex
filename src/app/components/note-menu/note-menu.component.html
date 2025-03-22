@@ -1,5 +1,5 @@
 <div class="note-menu-container" (clickOutside)="closeMenu()">
-    <button class="menu-button" (click)="toggleMenu($event)">
+    <button class="menu-button" (click)="toggleMenu($event)" [ngStyle]="menuButtonStyle">
       <mat-icon>more_vert</mat-icon>
     </button>
     
@@ -38,5 +38,3 @@
       </ng-container>
     </div>
   </div>
-  
-  

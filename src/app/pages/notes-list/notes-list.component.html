@@ -84,9 +84,33 @@
             </div>
           </div>
           
-          <button type="submit" class="submit-btn" [disabled]="newNoteForm.invalid || isLoading">
-            {{ isLoading ? 'Creating...' : 'Create Note' }}
-          </button>
+          <!-- Color picker -->
+          <div class="form-group color-picker-container">
+            <label>Note Color:</label>
+            <div class="color-options">
+              <div 
+                *ngFor="let colorOption of colorOptions" 
+                class="color-option" 
+                [style.background-color]="colorOption.value"
+                [class.selected]="selectedColor === colorOption.value"
+                [class.no-color]="colorOption.name === 'none'"
+                (click)="setNoteColor(colorOption.value)"
+                [attr.title]="colorOption.name">
+                <mat-icon *ngIf="selectedColor === colorOption.value">check</mat-icon>
+              </div>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <div class="button-container">
+              <button type="submit" class="create-btn" [disabled]="newNoteForm.invalid || isLoading">
+                {{ isLoading ? 'Creating...' : 'Create Note' }}
+              </button>
+              <button type="button" class="cancel-btn" (click)="toggleNewNoteForm()">
+                Cancel
+              </button>
+            </div>
+          </div>
         </form>
       </div>
       
@@ -121,7 +145,10 @@
         </div>
         
         <!-- Existing Notes -->
-        <div *ngFor="let note of notes; trackBy: trackNoteById" class="note-card">
+        <div *ngFor="let note of notes; trackBy: trackNoteById" 
+             class="note-card" 
+             [ngClass]="{'colored-note': note.color}"
+             [style.backgroundColor]="note.color">
           <div class="note-card-content" [routerLink]="['/notes', note.id]">
             <div class="note-text-wrapper">
               <h2 class="note-title">{{ note.title }}</h2>

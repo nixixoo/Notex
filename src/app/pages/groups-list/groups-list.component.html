@@ -77,6 +77,23 @@
             </div>
           </div>
           
+          <!-- Color picker -->
+          <div class="form-group color-picker-container">
+            <label>Group Color:</label>
+            <div class="color-options">
+              <div 
+                *ngFor="let colorOption of colorOptions" 
+                class="color-option" 
+                [style.background-color]="colorOption.value"
+                [class.selected]="selectedColor === colorOption.value"
+                [class.no-color]="colorOption.name === 'none'"
+                (click)="setGroupColor(colorOption.value)"
+                [attr.title]="colorOption.name">
+                <mat-icon *ngIf="selectedColor === colorOption.value">check</mat-icon>
+              </div>
+            </div>
+          </div>
+          
           <button type="submit" class="submit-btn" [disabled]="newGroupForm.invalid || isLoading">
             {{ isLoading ? 'Creating...' : 'Create Group' }}
           </button>
@@ -118,6 +135,7 @@
         
         <!-- Existing Groups -->
         <div *ngFor="let group of groups; trackBy: trackGroupById" class="group-card">
+          <div class="group-card-tab" [style.background-color]="group.color || 'white'"></div>
           <div class="group-card-content" [routerLink]="['/groups', group.id]">
             <div class="group-text-wrapper">
               <h2 class="group-name">{{ group.name }}</h2>

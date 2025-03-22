@@ -38,6 +38,16 @@ export class NoteEditorComponent implements OnInit {
   trashedCount = 0
   groupCount = 0
   isEditable = true
+  
+  // Color options for notes
+  colorOptions = [
+    { name: 'purple', value: '#bf9dfb' },
+    { name: 'blue', value: '#9fdeff' },
+    { name: 'green', value: '#b5e9d3' },
+    { name: 'yellow', value: '#ffe380' },
+    { name: 'orange', value: '#ffc082' },
+    { name: 'none', value: '' }
+  ]
 
   readonly TITLE_MAX_LENGTH = 75
   readonly SUBTITLE_MAX_LENGTH = 150
@@ -61,7 +71,8 @@ export class NoteEditorComponent implements OnInit {
         Validators.required,
         Validators.maxLength(this.SUBTITLE_MAX_LENGTH)
       ]],
-      content: ['', [Validators.required]]
+      content: ['', [Validators.required]],
+      color: ['']
     })
 
     // Subscribe to count updates
@@ -101,6 +112,10 @@ export class NoteEditorComponent implements OnInit {
   get subtitle() {
     return this.noteForm.get('subtitle')
   }
+  
+  get color() {
+    return this.noteForm.get('color')
+  }
 
   ngOnInit(): void {
     // Load initial counts
@@ -124,7 +139,8 @@ export class NoteEditorComponent implements OnInit {
         this.noteForm.patchValue({
           title: note.title,
           subtitle: note.subtitle,
-          content: note.content
+          content: note.content,
+          color: note.color || ''
         })
 
         if (!this.isEditable) {
@@ -149,7 +165,8 @@ export class NoteEditorComponent implements OnInit {
         ...this.note,
         title: this.title?.value,
         subtitle: this.subtitle?.value,
-        content: this.noteForm.get('content')?.value
+        content: this.noteForm.get('content')?.value,
+        color: this.color?.value || ''
       }
 
       await firstValueFrom(this.notesService.updateNote(this.note.id, updatedNote))
@@ -165,6 +182,10 @@ export class NoteEditorComponent implements OnInit {
     } finally {
       this.isSaving = false
     }
+  }
+
+  setNoteColor(colorValue: string): void {
+    this.color?.setValue(colorValue)
   }
 
   convertToPermanentAccount(): void {

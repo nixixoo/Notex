@@ -107,6 +107,22 @@
     box-shadow: 0 4px 12px var(--shadow-color);
   }
 
+  &.colored-note {
+    .note-title, 
+    .note-subtitle, 
+    .note-date {
+      color: rgba(0, 0, 0, 0.7);
+    }
+    
+    .note-preview-container {
+      border-color: rgba(0, 0, 0, 0.2);
+    }
+    
+    .note-preview {
+      color: rgba(0, 0, 0, 0.6);
+    }
+  }
+
   &.add-note-card {
     cursor: pointer;
     display: flex;
@@ -119,6 +135,10 @@
     &:hover {
       border-color: var(--primary-purple);
       background-color: var(--hover-color);
+      
+      .add-icon {
+        color: var(--primary-purple);
+      }
     }
 
     &.centered-empty {
@@ -389,20 +409,54 @@
   flex-direction: column;
   align-items: center;
   gap: 1rem;
-  
-  .add-icon {
-    transition: color 0.3s ease;
-    font-size: 3rem !important;
-    color: var(--text-color-light);
-    transition: color 0.3s ease;
-    width: auto !important;
-    height: auto !important;
-  }
-  
-  .add-text {
-    font-size: 1.25rem;
-    color: var(--text-color-light);
-    font-weight: 500;
+  padding: 2rem;
+}
+
+.add-icon {
+  font-size: 3rem !important;
+  width: auto !important;
+  height: auto !important;
+  color: var(--text-color-light);
+  transition: color 0.3s ease;
+}
+
+.add-text {
+  font-size: 1.25rem;
+  color: var(--text-color-light);
+  font-weight: 500;
+}
+
+.empty-notes-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 3rem 0;
+}
+
+.empty-note-card {
+  background-color: var(--surface-color);
+  border: 2px dashed var(--border-color);
+  border-radius: 8px;
+  box-shadow: none;
+  max-width: 400px;
+  width: 100%;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin: 2rem auto;
+
+  &:hover {
+    border-color: var(--primary-purple);
+    background-color: var(--hover-color);
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px var(--shadow-color);
+    
+    .add-icon {
+      color: var(--primary-purple);
+    }
   }
 }
 
@@ -495,5 +549,55 @@ input:checked + .slider:before {
     font-size: 24px;
     width: 24px;
     height: 24px;
+  }
+}
+
+// Color picker styles
+.color-picker-container {
+  margin-bottom: 1rem;
+}
+
+.color-options {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.color-option {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+  
+  &:hover {
+    transform: scale(1.1);
+  }
+  
+  &.selected {
+    border-color: var(--text-color);
+    
+    mat-icon {
+      color: white;
+    }
+  }
+  
+  &.no-color {
+    background-color: transparent !important;
+    border: 2px dashed var(--border-color);
+    
+    &.selected {
+      border-color: var(--text-color);
+      border-style: solid;
+      
+      mat-icon {
+        color: var(--text-color);
+      }
+    }
   }
 }

@@ -37,6 +37,7 @@ export class NotesService {
           userId TEXT NOT NULL,
           status TEXT DEFAULT 'active',
           groupId TEXT,
+          color TEXT,
           FOREIGN KEY(userId) REFERENCES users(id) ON DELETE CASCADE
         )
       `)
@@ -178,7 +179,8 @@ export class NotesService {
         userId: this.GUEST_USER_ID,
         status: "active",
         isLocal: true,
-        groupId: noteData.groupId
+        groupId: noteData.groupId,
+        color: noteData.color || ""
       }
 
       // Update local storage
@@ -213,13 +215,14 @@ export class NotesService {
         updatedAt: new Date(now),
         userId: currentUser.id,
         status: "active",
-        groupId: noteData.groupId
+        groupId: noteData.groupId,
+        color: noteData.color || ""
       }
 
       return from(
         this.client.execute({
-          sql: "INSERT INTO notes (id, title, subtitle, content, createdAt, updatedAt, userId, status, groupId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-          args: [id, noteData.title, noteData.subtitle, newNote.content, now, now, currentUser.id, "active", noteData.groupId || null],
+          sql: "INSERT INTO notes (id, title, subtitle, content, createdAt, updatedAt, userId, status, groupId, color) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          args: [id, noteData.title, noteData.subtitle, newNote.content, now, now, currentUser.id, "active", noteData.groupId || null, noteData.color || null],
         }),
       ).pipe(
         map(() => {
@@ -310,6 +313,11 @@ export class NotesService {
       args.push(noteData.status)
     }
 
+    if (noteData.color !== undefined) {
+      sql += `, color = ?`
+      args.push(noteData.color)
+    }
+
     if (noteData.groupId !== undefined) {
       sql += `, groupId = ?`
       args.push(noteData.groupId)
@@ -346,6 +354,7 @@ export class NotesService {
           ...(noteData.subtitle !== undefined && { subtitle: noteData.subtitle }),
           ...(noteData.content !== undefined && { content: noteData.content }),
           ...(noteData.status !== undefined && { status: noteData.status }),
+          ...(noteData.color !== undefined && { color: noteData.color }),
           ...(noteData.groupId !== undefined && { groupId: noteData.groupId }),
           updatedAt,
         }
@@ -429,6 +438,7 @@ export class NotesService {
       userId: row["userId"] as string,
       status: ((row["status"] as string) || "active") as "active" | "archived" | "trashed",
       groupId: (row["groupId"] as string) || undefined,
+      color: (row["color"] as string) || undefined,
     }
   }
 

@@ -44,6 +44,7 @@
   min-height: 200px;
   display: flex;
   flex-direction: column;
+  overflow: visible;
 
   &:hover {
     transform: translateY(-2px);
@@ -62,6 +63,10 @@
     &:hover {
       border-color: var(--primary-purple);
       background-color: var(--hover-color);
+      
+      .add-group-icon {
+        color: var(--primary-purple);
+      }
     }
 
     &.centered-empty {
@@ -72,15 +77,42 @@
   }
 }
 
+.group-card-tab {
+  position: absolute;
+  top: -10px;
+  right: 0;
+  width: 30%;
+  height: 20px;
+  background-color: white; // Default color, will be overridden by the group's color
+  border-radius: 8px 8px 0 0;
+  z-index: 0;
+  border: 1px solid var(--border-color);
+  border-bottom: none;
+}
+
 .group-card-content {
   padding: 1.5rem;
-  cursor: pointer;
-  position: relative;
+  flex-grow: 1;
   display: flex;
   flex-direction: column;
-  height: 100%;
-  width: 100%;
-  box-sizing: border-box;
+  position: relative;
+  z-index: 1;
+  
+  .group-name {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+    word-break: break-word;
+  }
+  
+  .group-description {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    flex-grow: 1;
+    word-break: break-word;
+  }
 }
 
 .group-text-wrapper {
@@ -131,21 +163,31 @@
   flex-direction: column;
   align-items: center;
   gap: 1rem;
-  
-  .add-group-icon {
-    transition: color 0.3s ease;
-    font-size: 3rem !important;
-    color: var(--text-color-light);
-    transition: color 0.3s ease;
-    width: auto !important;
-    height: auto !important;
-  }
-  
-  .add-text {
-    font-size: 1.25rem;
-    color: var(--text-color-light);
-    font-weight: 500;
-  }
+}
+
+.add-group-icon {
+  font-size: 3rem !important;
+  width: auto !important;
+  height: auto !important;
+  color: var(--text-color-light);
+  transition: color 0.3s ease;
+}
+
+.add-text {
+  font-size: 1.25rem;
+  color: var(--text-color-light);
+  font-weight: 500;
+}
+
+.folder-icon {
+  font-size: 2rem;
+  height: 2rem;
+  width: 2rem;
+  color: var(--primary-purple);
+  margin-bottom: 0.5rem;
+  position: absolute;
+  top: 0.5rem;
+  left: 1.5rem;
 }
 
 .guest-banner {
@@ -332,4 +374,57 @@
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+.color-picker-container {
+  margin-bottom: 1.5rem;
+}
+
+.color-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.color-option {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid transparent;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+  
+  &:hover {
+    transform: scale(1.1);
+  }
+  
+  &.selected {
+    border-color: var(--text-color);
+  }
+  
+  &.no-color {
+    background-color: transparent !important;
+    border: 2px dashed var(--border-color);
+    
+    &.selected {
+      border-color: var(--text-color);
+      border-style: solid;
+      
+      mat-icon {
+        color: var(--text-color);
+      }
+    }
+  }
+  
+  mat-icon {
+    font-size: 16px;
+    height: 16px;
+    width: 16px;
+    color: white;
+    text-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+  }
 }

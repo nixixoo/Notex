@@ -93,6 +93,23 @@
         </div>
       </div>
 
+      <!-- Color picker -->
+      <div class="form-group color-picker-container" *ngIf="isEditable">
+        <label class="color-picker-label">Note Color:</label>
+        <div class="color-options">
+          <div 
+            *ngFor="let colorOption of colorOptions" 
+            class="color-option" 
+            [style.background-color]="colorOption.value"
+            [class.selected]="color?.value === colorOption.value"
+            [class.no-color]="colorOption.name === 'none'"
+            (click)="setNoteColor(colorOption.value)"
+            [attr.title]="colorOption.name">
+            <mat-icon *ngIf="color?.value === colorOption.value">check</mat-icon>
+          </div>
+        </div>
+      </div>
+
       <div class="form-group">
         <textarea
           formControlName="content"
