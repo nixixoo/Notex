@@ -143,4 +143,23 @@ export class AuthService {
     if (!this.isBrowser) return null;
     return localStorage.getItem(this.TOKEN_KEY);
   }
+
+  setSession(response: AuthResponse): void {
+    if (response.token) {
+      localStorage.setItem(this.TOKEN_KEY, response.token);
+      localStorage.setItem(this.USER_KEY, JSON.stringify(response.user));
+      this.userSubject.next(response.user);
+      
+      // Disable guest mode when setting session
+      this.setGuestMode(false);
+    }
+  }
+
+  enableGuestMode(): void {
+    this.setGuestMode(true);
+  }
+
+  isAuthenticated(): boolean {
+    return this.isLoggedIn();
+  }
 }

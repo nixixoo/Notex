@@ -197,6 +197,19 @@ export class NotesService {
     return of([]);
   }
 
+  // Note status management methods
+  archiveNote(id: string): Observable<Note | null> {
+    return this.updateNote(id, { status: 'archived' });
+  }
+
+  trashNote(id: string): Observable<Note | null> {
+    return this.updateNote(id, { status: 'trashed' });
+  }
+
+  restoreNote(id: string): Observable<Note | null> {
+    return this.updateNote(id, { status: 'active' });
+  }
+
   private loadNotes(status: "active" | "archived" | "trashed" = "active"): void {
     if (this.authService.isGuestMode()) {
       const notes = this.getLocalNotes().filter(note => 
