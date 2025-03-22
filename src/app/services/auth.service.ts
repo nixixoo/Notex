@@ -44,6 +44,7 @@ export class AuthService {
     
     // Check for token
     const token = localStorage.getItem(this.TOKEN_KEY);
+    console.log('Auth state initialized with token:', token ? 'Token exists' : 'No token');
     if (token) {
       // Validate token with backend
       this.validateToken().subscribe();
@@ -54,6 +55,7 @@ export class AuthService {
     if (!this.isBrowser) return of(false);
     
     const token = localStorage.getItem(this.TOKEN_KEY);
+    console.log('Validating token:', token ? 'Token exists' : 'No token');
     if (!token) {
       this.clearAuthData();
       return of(false);
@@ -61,11 +63,13 @@ export class AuthService {
     
     return this.apiService.get<User>('auth/me').pipe(
       tap(user => {
+        console.log('Token validated successfully, user:', user);
         this.userSubject.next(user);
         localStorage.setItem(this.USER_KEY, JSON.stringify(user));
       }),
       map(() => true),
-      catchError(() => {
+      catchError(error => {
+        console.error('Token validation failed:', error);
         this.clearAuthData();
         return of(false);
       })
@@ -76,6 +80,7 @@ export class AuthService {
     return this.apiService.post<AuthResponse>('auth/login', credentials).pipe(
       tap(response => {
         if (response.token) {
+          console.log('Login successful, storing token');
           localStorage.setItem(this.TOKEN_KEY, response.token);
           localStorage.setItem(this.USER_KEY, JSON.stringify(response.user));
           this.userSubject.next(response.user);
@@ -91,6 +96,7 @@ export class AuthService {
     return this.apiService.post<AuthResponse>('auth/register', userData).pipe(
       tap(response => {
         if (response.token) {
+          console.log('Registration successful, storing token');
           localStorage.setItem(this.TOKEN_KEY, response.token);
           localStorage.setItem(this.USER_KEY, JSON.stringify(response.user));
           this.userSubject.next(response.user);
@@ -146,6 +152,7 @@ export class AuthService {
 
   setSession(response: AuthResponse): void {
     if (response.token) {
+      console.log('Setting session with token');
       localStorage.setItem(this.TOKEN_KEY, response.token);
       localStorage.setItem(this.USER_KEY, JSON.stringify(response.user));
       this.userSubject.next(response.user);
