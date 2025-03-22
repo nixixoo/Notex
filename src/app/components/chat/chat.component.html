@@ -1,0 +1,50 @@
+<div class="chat-container">
+  <div class="chat-header">
+    <h2>AI Chat Assistant</h2>
+    <button mat-icon-button (click)="clearChat()" aria-label="Clear chat">
+      <mat-icon>delete</mat-icon>
+    </button>
+  </div>
+  
+  <div class="messages-container">
+    <div *ngIf="messages.length === 0" class="empty-chat">
+      <p>Start a conversation with the AI assistant</p>
+    </div>
+    
+    <div *ngFor="let msg of messages" class="message" [ngClass]="{'user-message': msg.isUser, 'ai-message': !msg.isUser}">
+      <div class="message-content">
+        <div class="message-header">
+          <span class="message-sender">{{ msg.isUser ? 'You' : 'AI Assistant' }}</span>
+          <span class="message-time">{{ msg.timestamp | date:'short' }}</span>
+        </div>
+        <div class="message-text">{{ msg.content }}</div>
+      </div>
+    </div>
+    
+    <div *ngIf="isLoading" class="loading-message">
+      <mat-spinner diameter="30"></mat-spinner>
+      <span>AI is thinking...</span>
+    </div>
+  </div>
+  
+  <div class="chat-input">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Type a message</mat-label>
+      <input 
+        matInput 
+        [(ngModel)]="message" 
+        placeholder="Ask me anything..." 
+        (keyup.enter)="sendMessage()"
+      >
+      <button 
+        mat-icon-button 
+        matSuffix 
+        (click)="sendMessage()" 
+        [disabled]="!message.trim() || isLoading"
+        aria-label="Send message"
+      >
+        <mat-icon>send</mat-icon>
+      </button>
+    </mat-form-field>
+  </div>
+</div>

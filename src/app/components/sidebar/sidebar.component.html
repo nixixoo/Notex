@@ -47,6 +47,14 @@
         <span>Trash</span>
         <span class="count" *ngIf="trashedCount > 0" [@countFadeIn]>{{ trashedCount }}</span>
       </a>
+      
+      <a routerLink="/chat" 
+         routerLinkActive="active" 
+         class="nav-item"
+         (click)="handleNavClick($event)">
+        <mat-icon>chat</mat-icon>
+        <span>AI Chat</span>
+      </a>
     </nav>
   </div>
 </div>
