@@ -63,6 +63,8 @@
     &:hover {
       border-color: var(--primary-purple);
       background-color: var(--hover-color);
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px var(--shadow-color);
       
       .add-group-icon {
         color: var(--primary-purple);
@@ -71,8 +73,9 @@
 
     &.centered-empty {
       grid-column: 1 / -1;
-      max-width: 300px;
-      margin: 0 auto;
+      margin: 2rem auto;
+      max-width: 400px;
+      width: 100%;
     }
   }
 }

@@ -100,13 +100,13 @@
         </form>
       </div>
       
-      <div *ngIf="isLoading" class="loading-container" [@fadeIn]>
+      <div *ngIf="isLoadingGroups" class="loading-container" [@fadeIn]>
         <div class="loading-spinner"></div>
         <p>Loading groups...</p>
       </div>
       
       <!-- Empty State -->
-      <div *ngIf="!isLoading && groups.length === 0" class="groups-grid">
+      <div *ngIf="!isLoadingGroups && groups.length === 0" class="groups-grid">
         <!-- New Group Card -->
         <div *ngIf="showEmptyMessage" class="group-card add-group-card centered-empty"
              (click)="toggleNewGroupForm()"
@@ -119,7 +119,7 @@
       </div>
       
       <!-- Groups grid -->
-      <div *ngIf="!isLoading && groups.length > 0" 
+      <div *ngIf="!isLoadingGroups && groups.length > 0" 
            class="groups-grid" 
            [@listAnimation]="groups.length">
         
