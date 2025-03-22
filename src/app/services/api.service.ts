@@ -10,6 +10,7 @@ export class ApiService {
   // Determine API URL based on environment
   private apiUrl: string;
   private readonly TOKEN_KEY = "auth_token"; // Match the key used in AuthService
+  private useProxy: boolean = false;
 
   constructor(
     private http: HttpClient,
@@ -26,8 +27,12 @@ export class ApiService {
       this.apiUrl = isProduction 
         ? 'https://notex-backend-six.vercel.app'
         : 'http://localhost:3000';
+      
+      // Use CORS proxy for production only
+      this.useProxy = isProduction;
         
       console.log('API URL:', this.apiUrl);
+      console.log('Using CORS proxy:', this.useProxy);
     }
   }
 
@@ -43,37 +48,50 @@ export class ApiService {
     
     const headers = new HttpHeaders({
       'Content-Type': 'application/json',
-      'Authorization': token ? `Bearer ${token}` : ''
+      'Authorization': token ? `Bearer ${token}` : '',
+      'X-Requested-With': 'XMLHttpRequest'
     });
     
     console.log('Authorization header:', headers.get('Authorization') || 'No Authorization header');
     return headers;
   }
 
+  // Helper to get the full URL with proxy if needed
+  private getFullUrl(endpoint: string): string {
+    const url = `${this.apiUrl}/api/${endpoint}`;
+    
+    if (this.useProxy) {
+      // Use a CORS proxy service
+      return `https://cors-anywhere.herokuapp.com/${url}`;
+    }
+    
+    return url;
+  }
+
   // Generic GET request
   get<T>(endpoint: string): Observable<T> {
-    const url = `${this.apiUrl}/api/${endpoint}`;
+    const url = this.getFullUrl(endpoint);
     console.log(`Making GET request to: ${url}`);
     return this.http.get<T>(url, { headers: this.getHeaders() });
   }
 
   // Generic POST request
   post<T>(endpoint: string, data: any): Observable<T> {
-    const url = `${this.apiUrl}/api/${endpoint}`;
+    const url = this.getFullUrl(endpoint);
     console.log(`Making POST request to: ${url}`, data);
     return this.http.post<T>(url, data, { headers: this.getHeaders() });
   }
 
   // Generic PUT request
   put<T>(endpoint: string, data: any): Observable<T> {
-    const url = `${this.apiUrl}/api/${endpoint}`;
+    const url = this.getFullUrl(endpoint);
     console.log(`Making PUT request to: ${url}`, data);
     return this.http.put<T>(url, data, { headers: this.getHeaders() });
   }
 
   // Generic DELETE request
   delete<T>(endpoint: string): Observable<T> {
-    const url = `${this.apiUrl}/api/${endpoint}`;
+    const url = this.getFullUrl(endpoint);
     console.log(`Making DELETE request to: ${url}`);
     return this.http.delete<T>(url, { headers: this.getHeaders() });
   }
