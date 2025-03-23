@@ -11,11 +11,12 @@ import { SidebarComponent } from "../../components/sidebar/sidebar.component";
 import { SidebarService } from "../../services/sidebar.service";
 import { MatIconModule } from "@angular/material/icon"
 import { firstValueFrom } from 'rxjs';
+import { ChatSidebarComponent } from "../../components/chat-sidebar/chat-sidebar.component";
 
 @Component({
   selector: "app-note-editor",
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, SidebarComponent, MatIconModule],
+  imports: [CommonModule, ReactiveFormsModule, SidebarComponent, MatIconModule, ChatSidebarComponent],
   templateUrl: "./note-editor.component.html",
   styleUrls: ["./note-editor.component.scss"],
   animations: [

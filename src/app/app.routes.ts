@@ -5,7 +5,6 @@ import { NotesListComponent } from "./pages/notes-list/notes-list.component"
 import { NoteEditorComponent } from "./pages/note-editor/note-editor.component"
 import { GroupsListComponent } from "./pages/groups-list/groups-list.component"
 import { GroupDetailComponent } from "./pages/group-detail/group-detail.component"
-import { ChatPageComponent } from "./pages/chat-page/chat-page.component"
 import { authGuard } from "./guards/auth.guard"
 import { noAuthGuard } from "./guards/no-auth.guard"
 
@@ -41,11 +40,6 @@ export const routes: Routes = [
   { 
     path: 'groups/:id', 
     component: GroupDetailComponent,
-    canActivate: [authGuard] 
-  },
-  { 
-    path: 'chat', 
-    component: ChatPageComponent,
     canActivate: [authGuard] 
   },
   { path: "**", redirectTo: "/notes" },

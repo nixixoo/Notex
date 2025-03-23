@@ -1,0 +1,59 @@
+<div class="chat-sidebar-container">
+  <!-- Toggle Button -->
+  <button class="chat-toggle" (click)="toggle()" [class.open]="isOpen">
+    <mat-icon>{{ isOpen ? 'chevron_right' : 'chat' }}</mat-icon>
+    <span class="toggle-label" *ngIf="!isOpen">AI Assistant</span>
+  </button>
+
+  <!-- Chat Content -->
+  <div class="chat-sidebar-content" *ngIf="isOpen" [@slideInOut]>
+    <div class="chat-header">
+      <h2>AI Assistant</h2>
+      <button mat-icon-button (click)="clearChat()" aria-label="Clear chat">
+        <mat-icon>delete</mat-icon>
+      </button>
+    </div>
+    
+    <div class="messages-container">
+      <div *ngIf="messages.length === 0" class="empty-chat">
+        <p>Ask me about your note</p>
+      </div>
+      
+      <div *ngFor="let msg of messages" class="message" [ngClass]="{'user-message': msg.isUser, 'ai-message': !msg.isUser}">
+        <div class="message-content">
+          <div class="message-header">
+            <span class="message-sender">{{ msg.isUser ? 'You' : 'AI Assistant' }}</span>
+            <span class="message-time">{{ msg.timestamp | date:'short' }}</span>
+          </div>
+          <div class="message-text">{{ msg.content }}</div>
+        </div>
+      </div>
+      
+      <div *ngIf="isLoading" class="loading-message">
+        <mat-spinner diameter="20"></mat-spinner>
+        <span>AI is thinking...</span>
+      </div>
+    </div>
+    
+    <div class="chat-input">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Ask about your note</mat-label>
+        <input 
+          matInput 
+          [(ngModel)]="message" 
+          placeholder="How can I help with this note?" 
+          (keyup.enter)="sendMessage()"
+        >
+        <button 
+          mat-icon-button 
+          matSuffix 
+          (click)="sendMessage()" 
+          [disabled]="!message.trim() || isLoading"
+          aria-label="Send message"
+        >
+          <mat-icon>send</mat-icon>
+        </button>
+      </mat-form-field>
+    </div>
+  </div>
+</div>

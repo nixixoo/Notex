@@ -2,6 +2,7 @@ import { Injectable, Inject, isDevMode, PLATFORM_ID } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { isPlatformBrowser } from '@angular/common';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -10,27 +11,17 @@ export class ApiService {
   // Determine API URL based on environment
   private apiUrl: string;
   private readonly TOKEN_KEY = "auth_token"; // Match the key used in AuthService
-  private useProxy: boolean = false;
+  private useProxy: boolean = false; // Always disable proxy - we have proper CORS config now
 
   constructor(
     private http: HttpClient,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {
-    // Default to production URL (safer default)
-    this.apiUrl = 'https://notex-backend-six.vercel.app';
+    // Get API URL from environment
+    this.apiUrl = environment.apiUrl;
     
-    // Only check window.location in browser environment
+    // Only log in browser environment
     if (isPlatformBrowser(this.platformId)) {
-      const isProduction = window.location.hostname !== 'localhost';
-      
-      // Use the appropriate API URL
-      this.apiUrl = isProduction 
-        ? 'https://notex-backend-six.vercel.app'
-        : 'http://localhost:3000';
-      
-      // Use CORS proxy for production only
-      this.useProxy = isProduction;
-        
       console.log('API URL:', this.apiUrl);
       console.log('Using CORS proxy:', this.useProxy);
     }
@@ -58,7 +49,8 @@ export class ApiService {
 
   // Helper to get the full URL with proxy if needed
   private getFullUrl(endpoint: string): string {
-    const url = `${this.apiUrl}/api/${endpoint}`;
+    // The environment.apiUrl already includes /api/ so we don't need to add it again
+    const url = `${this.apiUrl}/${endpoint}`;
     
     if (this.useProxy) {
       // Use a CORS proxy service
