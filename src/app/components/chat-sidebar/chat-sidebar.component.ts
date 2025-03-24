@@ -9,6 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { animate, style, transition, trigger } from '@angular/animations';
+import { TextFieldModule } from '@angular/cdk/text-field';
 
 @Component({
   selector: 'app-chat-sidebar',
@@ -21,18 +22,19 @@ import { animate, style, transition, trigger } from '@angular/animations';
     MatFormFieldModule,
     MatIconModule,
     MatCardModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    TextFieldModule
   ],
   templateUrl: './chat-sidebar.component.html',
   styleUrls: ['./chat-sidebar.component.scss'],
   animations: [
     trigger('slideInOut', [
       transition(':enter', [
-        style({ transform: 'translateX(100%)' }),
-        animate('200ms ease-in', style({ transform: 'translateX(0%)' }))
+        style({ transform: 'translateY(-50%) translateX(100%)' }),
+        animate('300ms ease-in-out', style({ transform: 'translateY(-50%) translateX(0%)' }))
       ]),
       transition(':leave', [
-        animate('200ms ease-in', style({ transform: 'translateX(100%)' }))
+        animate('300ms ease-in-out', style({ transform: 'translateY(-50%) translateX(100%)' }))
       ])
     ])
   ]
@@ -53,6 +55,29 @@ export class ChatSidebarComponent implements OnInit {
 
   toggle(): void {
     this.isOpen = !this.isOpen;
+  }
+
+  handleEnterKey(event: any): void {
+    // Allow shift+enter for new lines
+    if (event.shiftKey) {
+      return;
+    }
+    
+    // Otherwise send the message and prevent default (new line)
+    event.preventDefault();
+    this.sendMessage();
+  }
+
+  autoGrow(element: any): void {
+    if (!element) return;
+    
+    // Reset height to auto to get the correct scrollHeight
+    element.style.height = 'auto';
+    
+    // Set the height to match the content (scrollHeight)
+    // with a minimum height of 48px
+    const newHeight = Math.max(48, element.scrollHeight);
+    element.style.height = `${newHeight}px`;
   }
 
   sendMessage(): void {

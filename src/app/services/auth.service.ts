@@ -1,6 +1,6 @@
 import { Injectable, Inject, PLATFORM_ID } from "@angular/core"
 import { BehaviorSubject, Observable, of } from "rxjs"
-import { map, catchError, tap } from "rxjs/operators"
+import { map, catchError, tap, retry, delay } from "rxjs/operators"
 import type { AuthResponse, LoginRequest, RegisterRequest, User } from "../models/user.model"
 import { Router } from "@angular/router"
 import { isPlatformBrowser } from '@angular/common'
@@ -19,6 +19,7 @@ export class AuthService {
   private userSubject = new BehaviorSubject<User | null>(this.getUserFromStorage())
   public user$ = this.userSubject.asObservable()
   private isBrowser: boolean
+  private isValidatingToken = false;
 
   constructor(
     @Inject(Router) private router: Router,
@@ -44,15 +45,20 @@ export class AuthService {
     
     // Check for token
     const token = localStorage.getItem(this.TOKEN_KEY);
+    const user = this.getUserFromStorage();
     console.log('Auth state initialized with token:', token ? 'Token exists' : 'No token');
-    if (token) {
-      // Validate token with backend
+    
+    if (token && user) {
+      // Set the user from storage immediately to prevent flickering
+      this.userSubject.next(user);
+      
+      // Then validate token with backend
       this.validateToken().subscribe();
     }
   }
 
   validateToken(): Observable<boolean> {
-    if (!this.isBrowser) return of(false);
+    if (!this.isBrowser || this.isValidatingToken) return of(false);
     
     const token = localStorage.getItem(this.TOKEN_KEY);
     console.log('Validating token:', token ? 'Token exists' : 'No token');
@@ -61,16 +67,25 @@ export class AuthService {
       return of(false);
     }
     
+    this.isValidatingToken = true;
+    
     return this.apiService.get<User>('auth/me').pipe(
+      retry(2), // Retry up to 2 times
+      delay(500), // Add a small delay between retries
       tap(user => {
         console.log('Token validated successfully, user:', user);
         this.userSubject.next(user);
         localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+        this.isValidatingToken = false;
       }),
       map(() => true),
       catchError(error => {
         console.error('Token validation failed:', error);
-        this.clearAuthData();
+        // Only clear auth data if we get a 401 Unauthorized response
+        if (error.status === 401) {
+          this.clearAuthData();
+        }
+        this.isValidatingToken = false;
         return of(false);
       })
     );

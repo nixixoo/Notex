@@ -1,8 +1,11 @@
 <div class="chat-sidebar-container">
   <!-- Toggle Button -->
   <button class="chat-toggle" (click)="toggle()" [class.open]="isOpen">
-    <mat-icon>{{ isOpen ? 'chevron_right' : 'chat' }}</mat-icon>
-    <span class="toggle-label" *ngIf="!isOpen">AI Assistant</span>
+    <div class="icon-container">
+      <mat-icon class="chat-icon" [class.hidden]="isOpen">chat</mat-icon>
+      <mat-icon class="close-icon" [class.hidden]="!isOpen">close</mat-icon>
+    </div>
+    <span class="toggle-label" *ngIf="!isOpen">AI</span>
   </button>
 
   <!-- Chat Content -->
@@ -37,13 +40,16 @@
     
     <div class="chat-input">
       <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Ask about your note</mat-label>
-        <input 
+        <textarea 
           matInput 
           [(ngModel)]="message" 
-          placeholder="How can I help with this note?" 
-          (keyup.enter)="sendMessage()"
-        >
+          placeholder="Ask about your note..." 
+          (keydown.enter)="handleEnterKey($event)"
+          (input)="autoGrow($event.target)"
+          #messageInput
+          rows="2"
+          class="chat-textarea"
+        ></textarea>
         <button 
           mat-icon-button 
           matSuffix 
