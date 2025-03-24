@@ -32,6 +32,11 @@
           <span *ngIf="password?.errors?.['minlength']">Password must be at least 6 characters</span>
         </div>
       </div>
+
+      <!-- Error message for failed registration -->
+      <div *ngIf="errorMessage" class="alert alert-danger" role="alert">
+        {{ errorMessage }}
+      </div>
       
       <button type="submit" class="submit-btn" [disabled]="registerForm.invalid || isLoading">
         {{ isLoading ? 'Creating account...' : 'Create Account' }}

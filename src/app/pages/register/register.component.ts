@@ -4,6 +4,7 @@ import { FormBuilder, type FormGroup, ReactiveFormsModule, Validators } from "@a
 import { Router, RouterLink } from "@angular/router"
 import { AuthService } from "../../services/auth.service"
 import { animate, style, transition, trigger } from "@angular/animations"
+import { catchError, retry, throwError, timer } from 'rxjs'
 
 @Component({
   selector: "app-register",
@@ -23,6 +24,7 @@ import { animate, style, transition, trigger } from "@angular/animations"
 export class RegisterComponent {
   registerForm: FormGroup
   isLoading = false;
+  errorMessage: string = '';
 
   constructor(
     @Inject(FormBuilder) private fb: FormBuilder,
@@ -45,19 +47,37 @@ export class RegisterComponent {
   onSubmit(): void {
     if (this.registerForm.invalid) return
 
-    this.isLoading = true
+    this.isLoading = true;
+    this.errorMessage = '';
 
-    this.authService.register(this.registerForm.value).subscribe({
-      next: (response) => {
-        this.isLoading = false
-        this.authService.setSession(response)
-        this.router.navigate(["/notes"])
-      },
-      error: (error) => {
-        this.isLoading = false
-        console.error("Registration error:", error)
-        // Handle error (show message, etc.)
-      },
-    })
+    // Use retry with backoff strategy for Vercel cold starts
+    this.authService.register(this.registerForm.value)
+      .pipe(
+        // Retry up to 2 times with a 1-second delay between attempts
+        retry({
+          count: 2,
+          delay: (error, retryCount) => {
+            console.log(`Registration attempt ${retryCount} failed, retrying...`);
+            return timer(1000); // 1 second delay
+          }
+        }),
+        catchError(error => {
+          console.error("Registration error after retries:", error);
+          this.errorMessage = "Registration failed. Please try again.";
+          return throwError(() => error);
+        })
+      )
+      .subscribe({
+        next: (response) => {
+          this.isLoading = false;
+          this.authService.setSession(response);
+          this.router.navigate(["/notes"]);
+        },
+        error: (error) => {
+          this.isLoading = false;
+          console.error("Registration error:", error);
+          this.errorMessage = "Registration failed. Please try again.";
+        },
+      });
   }
 }
