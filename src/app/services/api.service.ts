@@ -8,7 +8,11 @@ import { environment } from '../../environments/environment';
   providedIn: 'root'
 })
 export class ApiService {
-  // Determine API URL based on environment
+  // API URLs
+  private readonly PROD_API_URL = 'https://notex-backend-six.vercel.app/api';
+  private readonly DEV_API_URL = 'http://localhost:3000/api';
+  
+  // Service properties
   private apiUrl: string;
   private readonly TOKEN_KEY = "auth_token"; // Match the key used in AuthService
   private useProxy: boolean = false; // Always disable proxy - we have proper CORS config now
@@ -17,13 +21,17 @@ export class ApiService {
     private http: HttpClient,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {
-    // Get API URL from environment
-    this.apiUrl = environment.apiUrl;
-    
-    // Only log in browser environment
+    // Determine if we're in production (Vercel) or development
     if (isPlatformBrowser(this.platformId)) {
+      // Check if we're on Vercel by looking at the hostname
+      const isVercel = window.location.hostname.includes('vercel.app');
+      this.apiUrl = isVercel ? this.PROD_API_URL : this.DEV_API_URL;
+      console.log('Running on Vercel:', isVercel);
       console.log('API URL:', this.apiUrl);
       console.log('Using CORS proxy:', this.useProxy);
+    } else {
+      // Default to production for SSR
+      this.apiUrl = this.PROD_API_URL;
     }
   }
 
@@ -49,14 +57,8 @@ export class ApiService {
 
   // Helper to get the full URL with proxy if needed
   private getFullUrl(endpoint: string): string {
-    // The environment.apiUrl already includes /api/ so we don't need to add it again
+    // The apiUrl already includes /api/ so we don't need to add it again
     const url = `${this.apiUrl}/${endpoint}`;
-    
-    if (this.useProxy) {
-      // Use a CORS proxy service
-      return `https://cors-anywhere.herokuapp.com/${url}`;
-    }
-    
     return url;
   }
 
@@ -64,27 +66,39 @@ export class ApiService {
   get<T>(endpoint: string): Observable<T> {
     const url = this.getFullUrl(endpoint);
     console.log(`Making GET request to: ${url}`);
-    return this.http.get<T>(url, { headers: this.getHeaders() });
+    return this.http.get<T>(url, { 
+      headers: this.getHeaders(),
+      withCredentials: false
+    });
   }
 
   // Generic POST request
   post<T>(endpoint: string, data: any): Observable<T> {
     const url = this.getFullUrl(endpoint);
     console.log(`Making POST request to: ${url}`, data);
-    return this.http.post<T>(url, data, { headers: this.getHeaders() });
+    return this.http.post<T>(url, data, { 
+      headers: this.getHeaders(),
+      withCredentials: false
+    });
   }
 
   // Generic PUT request
   put<T>(endpoint: string, data: any): Observable<T> {
     const url = this.getFullUrl(endpoint);
     console.log(`Making PUT request to: ${url}`, data);
-    return this.http.put<T>(url, data, { headers: this.getHeaders() });
+    return this.http.put<T>(url, data, { 
+      headers: this.getHeaders(),
+      withCredentials: false
+    });
   }
 
   // Generic DELETE request
   delete<T>(endpoint: string): Observable<T> {
     const url = this.getFullUrl(endpoint);
     console.log(`Making DELETE request to: ${url}`);
-    return this.http.delete<T>(url, { headers: this.getHeaders() });
+    return this.http.delete<T>(url, { 
+      headers: this.getHeaders(),
+      withCredentials: false
+    });
   }
 }
