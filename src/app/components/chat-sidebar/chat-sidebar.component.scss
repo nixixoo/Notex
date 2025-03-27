@@ -354,6 +354,9 @@
   .chat-sidebar-content {
     transition: transform 0.3s ease-in-out !important;
   }
+  
+  // Add a property to the host to avoid empty ruleset lint error
+  display: block;
 }
 
 .full-width {

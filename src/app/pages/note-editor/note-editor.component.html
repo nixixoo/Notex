@@ -7,7 +7,7 @@
   </app-sidebar>
 
   <!-- Add Chat Sidebar Component -->
-  <app-chat-sidebar *ngIf="note" [noteContent]="noteForm.get('content')?.value || ''"></app-chat-sidebar>
+  <app-chat-sidebar *ngIf="note" [noteContent]="noteForm.get('content')?.value || ''" [noteId]="note.id"></app-chat-sidebar>
 
   <div class="editor-container">
     <div *ngIf="authService.isGuestMode()" class="guest-banner">

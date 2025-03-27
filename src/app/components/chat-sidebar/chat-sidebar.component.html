@@ -18,11 +18,19 @@
     </div>
     
     <div class="messages-container">
-      <div *ngIf="messages.length === 0" class="empty-chat">
+      <!-- Loading messages indicator -->
+      <div *ngIf="messagesLoading" class="loading-messages">
+        <mat-spinner diameter="30"></mat-spinner>
+        <p>Loading chat history...</p>
+      </div>
+      
+      <!-- Empty chat message -->
+      <div *ngIf="!messagesLoading && allMessages.length === 0" class="empty-chat">
         <p>Ask me about your note</p>
       </div>
       
-      <div *ngFor="let msg of messages" class="message" [ngClass]="{'user-message': msg.isUser, 'ai-message': !msg.isUser}">
+      <!-- Chat messages -->
+      <div *ngFor="let msg of allMessages" class="message" [ngClass]="{'user-message': msg.isUser, 'ai-message': !msg.isUser}">
         <div class="message-content">
           <div class="message-header">
             <span class="message-sender">{{ msg.isUser ? 'You' : 'AI Assistant' }}</span>
@@ -32,6 +40,7 @@
         </div>
       </div>
       
+      <!-- AI thinking indicator -->
       <div *ngIf="isLoading" class="loading-message">
         <mat-spinner diameter="20"></mat-spinner>
         <span>AI is thinking...</span>
