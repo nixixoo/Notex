@@ -29,6 +29,7 @@ export interface ChatHistoryResponse {
 }
 
 const CHAT_STORAGE_KEY = 'notex_chat_messages';
+const CHAT_LANGUAGE_KEY = 'notex_chat_languages';
 
 @Injectable({
   providedIn: 'root'
@@ -36,6 +37,9 @@ const CHAT_STORAGE_KEY = 'notex_chat_messages';
 export class ChatService {
   // Store messages by noteId
   private messagesByNoteId: { [noteId: string]: ChatMessage[] } = {};
+  
+  // Store conversation language by noteId
+  private languageByNoteId: { [noteId: string]: string } = {};
   
   // Default messages for when no noteId is provided
   private defaultMessages: ChatMessage[] = [];
@@ -51,6 +55,9 @@ export class ChatService {
   ) {
     // Load messages from storage or API on service initialization
     this.loadMessages();
+    
+    // Load conversation languages
+    this.loadLanguages();
   }
 
   // Load messages from localStorage or API
@@ -66,6 +73,43 @@ export class ChatService {
       this.messagesLoaded = true;
       this.messagesLoadingSubject.next(false);
     }
+  }
+
+  // Load conversation languages from localStorage
+  private loadLanguages(): void {
+    const storedLanguages = localStorage.getItem(CHAT_LANGUAGE_KEY);
+    if (storedLanguages) {
+      try {
+        this.languageByNoteId = JSON.parse(storedLanguages);
+      } catch (error) {
+        console.error('Error loading chat languages from storage:', error);
+      }
+    }
+  }
+
+  // Save conversation languages to localStorage
+  private saveLanguages(): void {
+    try {
+      localStorage.setItem(CHAT_LANGUAGE_KEY, JSON.stringify(this.languageByNoteId));
+    } catch (error) {
+      console.error('Error saving chat languages to storage:', error);
+    }
+  }
+
+  // Get the conversation language for a specific note
+  getConversationLanguage(noteId?: string): string {
+    if (!noteId) {
+      return 'auto';
+    }
+    return this.languageByNoteId[noteId] || 'auto';
+  }
+
+  // Set the conversation language for a specific note
+  setConversationLanguage(noteId: string, language: string): void {
+    if (!noteId) return;
+    
+    this.languageByNoteId[noteId] = language;
+    this.saveLanguages();
   }
 
   // Load messages from API for authenticated users
@@ -175,15 +219,34 @@ export class ChatService {
     return this.messagesLoaded;
   }
 
-  // Add a user message and get AI response
-  sendMessage(content: string, noteId?: string): Observable<ChatResponse> {
+  /**
+   * Sends a user message to the chat API and retrieves the AI response.
+   * 
+   * @param content The user message content.
+   * @param noteId The ID of the note associated with the message (optional).
+   * @param originalMessage The original user message without note context (optional).
+   * @param hasNoteContext Flag indicating if the message includes note context (optional).
+   * @param language The language to use for the response (auto, en, es) (optional).
+   * 
+   * @returns An observable of the chat response from the API.
+   */
+  sendMessage(
+    content: string, 
+    noteId?: string, 
+    originalMessage?: string, 
+    hasNoteContext?: boolean,
+    language: string = 'auto'
+  ): Observable<ChatResponse> {
     // We no longer add the user message here, as it will be saved by the backend
     // and retrieved when the API response comes back
     
     // Send to API and get response
     return this.apiService.post<ChatResponse>('chat/message', { 
       message: content,
-      noteId: noteId
+      noteId: noteId,
+      originalMessage: originalMessage,
+      hasNoteContext: hasNoteContext,
+      language: language
     }).pipe(
       tap(() => {
         // After sending a message, reload messages from the API to get both
@@ -241,6 +304,12 @@ export class ChatService {
       this.defaultMessages = [];
     } else {
       this.messagesByNoteId[noteId] = [];
+      
+      // Also clear the language setting for this note
+      if (this.languageByNoteId[noteId]) {
+        delete this.languageByNoteId[noteId];
+        this.saveLanguages();
+      }
     }
     
     // Save to localStorage for guest users

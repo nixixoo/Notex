@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, OnChanges, SimpleChanges, OnDestroy } from '@angular/core';
+import { Component, OnInit, Input, OnChanges, SimpleChanges, OnDestroy, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ChatService, ChatMessage } from '../../services/chat.service';
@@ -8,9 +8,81 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { animate, style, transition, trigger } from '@angular/animations';
+import { MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { animate, style, transition, trigger, query, stagger, state } from '@angular/animations';
 import { TextFieldModule } from '@angular/cdk/text-field';
 import { Subscription } from 'rxjs';
+
+// Confirmation Dialog Component
+@Component({
+  selector: 'app-delete-confirmation-dialog',
+  template: `
+    <div class="dialog-container">
+      <h2 mat-dialog-title>Delete Chat History</h2>
+      <mat-dialog-content>
+        Are you sure you want to delete all chat messages? This action cannot be undone.
+      </mat-dialog-content>
+      <mat-dialog-actions align="end">
+        <button mat-button mat-dialog-close class="cancel-button">Cancel</button>
+        <button mat-button [mat-dialog-close]="true" color="warn" class="delete-button">Delete</button>
+      </mat-dialog-actions>
+    </div>
+  `,
+  styles: [`
+    :host {
+      display: block;
+    }
+    
+    .dialog-container {
+      color: var(--text-color);
+    }
+    
+    h2 {
+      margin-top: 0;
+      color: var(--text-color);
+    }
+    
+    mat-dialog-content {
+      color: var(--text-color);
+    }
+    
+    .cancel-button, .delete-button {
+      transition: transform 0.2s ease;
+      
+      &:hover {
+        transform: scale(1.05);
+      }
+    }
+    
+    .cancel-button {
+      color: var(--text-color);
+    }
+    
+    .delete-button {
+      color: var(--error-color, #f44336);
+    }
+    
+    :host-context(.dark-theme) {
+      h2, mat-dialog-content, .cancel-button {
+        color: white !important;
+      }
+    }
+  `],
+  standalone: true,
+  imports: [MatDialogModule, MatButtonModule]
+})
+export class DeleteConfirmationDialogComponent {
+  constructor(public dialogRef: MatDialogRef<DeleteConfirmationDialogComponent>) {
+    // Apply theme class to dialog container
+    dialogRef.addPanelClass('app-themed-dialog');
+    
+    // Check if dark theme is active and add appropriate class
+    const isDarkTheme = document.body.classList.contains('dark-theme');
+    if (isDarkTheme) {
+      dialogRef.addPanelClass('dark-theme-dialog');
+    }
+  }
+}
 
 @Component({
   selector: 'app-chat-sidebar',
@@ -24,6 +96,7 @@ import { Subscription } from 'rxjs';
     MatIconModule,
     MatCardModule,
     MatProgressSpinnerModule,
+    MatDialogModule,
     TextFieldModule
   ],
   templateUrl: './chat-sidebar.component.html',
@@ -37,18 +110,48 @@ import { Subscription } from 'rxjs';
       transition(':leave', [
         animate('300ms ease-in-out', style({ transform: 'translateY(-50%) translateX(100%)' }))
       ])
+    ]),
+    trigger('simpleFade', [
+      state('in', style({ opacity: 1 })),
+      state('out', style({ opacity: 0 })),
+      transition('in => out', animate('400ms ease-out')),
+      transition('out => in', animate('300ms ease-in')),
+      transition('void => in', [
+        style({ opacity: 0 }),
+        animate('300ms ease-in')
+      ])
+    ]),
+    trigger('newMessageFade', [
+      state('in', style({ opacity: 1, transform: 'translateY(0)' })),
+      state('none', style({ opacity: 1, transform: 'translateY(0)' })), // No animation state
+      transition('void => in', [
+        style({ opacity: 0, transform: 'translateY(10px)' }),
+        animate('300ms ease-in')
+      ]),
+      transition('void => none', [
+        style({ opacity: 1 }) // Immediately visible, no animation
+      ])
     ])
   ]
 })
-export class ChatSidebarComponent implements OnInit, OnChanges, OnDestroy {
+export class ChatSidebarComponent implements OnInit, OnChanges, OnDestroy, AfterViewChecked {
   @Input() noteContent: string = '';
   @Input() noteId: string = '';
+  @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
   
   message: string = '';
   messages: ChatMessage[] = [];
   isLoading: boolean = false;
   isOpen: boolean = false;
   messagesLoading: boolean = false;
+  isDeleting: boolean = false;
+  fadeState: string = 'in';
+  lastMessageId: string = ''; // Track the last message ID for animation
+  shouldScrollToBottom: boolean = false;
+  
+  // Language selection
+  selectedLanguage: string = 'auto';
+  currentConversationLanguage: string = 'auto';
   
   // Temporary message display for better UX
   pendingUserMessage: ChatMessage | null = null;
@@ -56,7 +159,10 @@ export class ChatSidebarComponent implements OnInit, OnChanges, OnDestroy {
   private loadingSubscription: Subscription | null = null;
   private checkMessagesInterval: any = null;
 
-  constructor(private chatService: ChatService) { }
+  constructor(
+    private chatService: ChatService,
+    private dialog: MatDialog
+  ) { }
 
   ngOnInit(): void {
     // Subscribe to the message loading state
@@ -64,22 +170,44 @@ export class ChatSidebarComponent implements OnInit, OnChanges, OnDestroy {
       this.messagesLoading = loading;
       if (!loading) {
         this.loadMessages();
+        this.shouldScrollToBottom = true;
       }
     });
     
     // Load messages immediately if they're already loaded
     if (this.chatService.areMessagesLoaded()) {
       this.loadMessages();
+      this.shouldScrollToBottom = true;
     }
     
     // Set up an interval to check for messages until they're loaded
     this.checkMessagesInterval = setInterval(() => {
       if (this.chatService.areMessagesLoaded()) {
         this.loadMessages();
+        this.shouldScrollToBottom = true;
         clearInterval(this.checkMessagesInterval);
         this.checkMessagesInterval = null;
       }
     }, 500);
+  }
+  
+  ngAfterViewChecked() {
+    // Scroll to bottom if needed
+    if (this.shouldScrollToBottom) {
+      this.scrollToBottom();
+      this.shouldScrollToBottom = false;
+    }
+  }
+  
+  scrollToBottom(): void {
+    try {
+      if (this.messagesContainer) {
+        const element = this.messagesContainer.nativeElement;
+        element.scrollTop = element.scrollHeight;
+      }
+    } catch (err) {
+      console.error('Error scrolling to bottom:', err);
+    }
   }
   
   ngOnDestroy(): void {
@@ -98,6 +226,7 @@ export class ChatSidebarComponent implements OnInit, OnChanges, OnDestroy {
     // If noteId changes, reload messages
     if (changes['noteId'] && this.chatService.areMessagesLoaded()) {
       this.loadMessages();
+      this.shouldScrollToBottom = true;
     }
   }
   
@@ -116,6 +245,27 @@ export class ChatSidebarComponent implements OnInit, OnChanges, OnDestroy {
         this.pendingUserMessage = null;
       }
     }
+    
+    // Get the conversation language from the note's metadata
+    this.currentConversationLanguage = this.chatService.getConversationLanguage(this.noteId) || 'auto';
+    
+    // Set the last message ID if there are messages
+    if (this.messages.length > 0) {
+      // Generate a unique ID based on content and timestamp if not already present
+      const lastMsg = this.messages[this.messages.length - 1];
+      this.lastMessageId = this.getMessageId(lastMsg);
+    }
+  }
+
+  // Generate a unique ID for a message
+  getMessageId(msg: ChatMessage): string {
+    return `${msg.isUser ? 'user' : 'ai'}-${msg.content.substring(0, 10)}-${msg.timestamp.getTime()}`;
+  }
+
+  // Check if a message is the last one added
+  isNewMessage(msg: ChatMessage): boolean {
+    const msgId = this.getMessageId(msg);
+    return msgId === this.lastMessageId && !this.isDeleting;
   }
 
   // Get all messages including any pending message
@@ -128,6 +278,12 @@ export class ChatSidebarComponent implements OnInit, OnChanges, OnDestroy {
 
   toggle(): void {
     this.isOpen = !this.isOpen;
+    if (this.isOpen) {
+      // When opening the sidebar, scroll to the bottom after a short delay
+      setTimeout(() => {
+        this.shouldScrollToBottom = true;
+      }, 100);
+    }
   }
 
   handleEnterKey(event: any): void {
@@ -153,6 +309,25 @@ export class ChatSidebarComponent implements OnInit, OnChanges, OnDestroy {
     element.style.height = `${newHeight}px`;
   }
 
+  // Simple language detection
+  detectLanguage(text: string): string {
+    // Common Spanish words and patterns
+    const spanishPatterns = [
+      /\b(hola|gracias|buenos días|buenas tardes|buenas noches|cómo estás|qué tal|por favor)\b/i,
+      /\b(el|la|los|las|un|una|unos|unas)\b/i,
+      /\b(y|o|pero|porque|como|cuando|donde|si|no|que)\b/i,
+      /[áéíóúüñ¿¡]/i,
+      /\b(necesito|quiero|puedo|debo|tengo|estoy|soy|voy|hacer|decir|ver|dar|saber)\b/i,
+      /\b(mi|tu|su|nuestro|vuestro|este|ese|aquel)\b/i
+    ];
+    
+    // Check if the text matches Spanish patterns
+    const spanishMatches = spanishPatterns.filter(pattern => pattern.test(text)).length;
+    
+    // If multiple Spanish patterns are found, consider it Spanish
+    return spanishMatches >= 2 ? 'es' : 'en';
+  }
+
   sendMessage(): void {
     if (!this.message.trim()) return;
     
@@ -169,43 +344,103 @@ export class ChatSidebarComponent implements OnInit, OnChanges, OnDestroy {
       noteId: this.noteId
     };
     
-    // If there's note content, add context to the message
-    let contextMessage = this.message;
+    // Set this as the last message ID for animation
+    this.lastMessageId = this.getMessageId(this.pendingUserMessage);
+    
+    // Reset fade state to ensure animation works for new messages
+    this.fadeState = 'in';
+    
+    // Set flag to scroll to bottom after view is updated
+    this.shouldScrollToBottom = true;
+    
+    // Detect language of the current message
+    const detectedLanguage = this.detectLanguage(userMessage);
+    
+    // Update conversation language if it's the first message or language changed
+    if (this.currentConversationLanguage === 'auto' || 
+        (this.messages.length > 0 && detectedLanguage !== this.currentConversationLanguage)) {
+      this.currentConversationLanguage = detectedLanguage;
+    }
+    
+    // If there's note content, add context to the message for the AI
+    // but we'll send a special flag to the backend to indicate this is a contextualized message
+    let contextMessage = userMessage;
+    let hasNoteContext = false;
+    
     if (this.noteContent) {
       contextMessage = `Note content: "${this.noteContent.substring(0, 500)}${this.noteContent.length > 500 ? '...' : ''}"
       
-My question: ${this.message}`;
+My question: ${userMessage}`;
+      hasNoteContext = true;
     }
     
     // Clear input
     this.message = '';
     
-    // Send message to service with noteId
-    this.chatService.sendMessage(contextMessage, this.noteId)
-      .subscribe({
-        next: () => {
-          // Messages will be loaded from the API automatically
-          this.loadMessages();
-          this.isLoading = false;
-        },
-        error: (error) => {
-          console.error('Error sending message:', error);
-          this.isLoading = false;
-          
-          // Show error message to user
-          alert('Error sending message. Please try again later.');
-        }
-      });
+    // Send message to service with noteId, context flag, and conversation language
+    this.chatService.sendMessage(
+      contextMessage, 
+      this.noteId, 
+      userMessage, 
+      hasNoteContext, 
+      this.currentConversationLanguage
+    ).subscribe({
+      next: () => {
+        // Save the conversation language for this note
+        this.chatService.setConversationLanguage(this.noteId, this.currentConversationLanguage);
+        
+        // Messages will be loaded from the API automatically
+        this.loadMessages();
+        this.isLoading = false;
+        
+        // Scroll to bottom to show new message
+        this.shouldScrollToBottom = true;
+      },
+      error: (error) => {
+        console.error('Error sending message:', error);
+        this.isLoading = false;
+        
+        // Show error message to user
+        alert('Error sending message. Please try again later.');
+      }
+    });
   }
 
   clearChat(): void {
-    // Clear pending message
-    this.pendingUserMessage = null;
+    // Open confirmation dialog
+    const dialogRef = this.dialog.open(DeleteConfirmationDialogComponent, {
+      width: '300px',
+      panelClass: 'app-themed-dialog',
+      backdropClass: 'app-dialog-backdrop'
+    });
     
-    // Clear chat for this specific note
-    this.chatService.clearChat(this.noteId);
-    
-    // Reload messages after clearing
-    this.loadMessages();
+    // Handle dialog close
+    dialogRef.afterClosed().subscribe(result => {
+      if (result === true) {
+        // Set deleting flag and fade state to trigger animation
+        this.isDeleting = true;
+        this.fadeState = 'out';
+        
+        // Wait for animation to complete before actually clearing
+        setTimeout(() => {
+          // User confirmed deletion
+          // Clear pending message
+          this.pendingUserMessage = null;
+          
+          // Reset conversation language
+          this.currentConversationLanguage = 'auto';
+          
+          // Clear chat for this specific note
+          this.chatService.clearChat(this.noteId);
+          
+          // Reload messages after clearing
+          this.loadMessages();
+          
+          // Reset states
+          this.isDeleting = false;
+          this.fadeState = 'in';
+        }, 400); // Match animation duration
+      }
+    });
   }
 }
