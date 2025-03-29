@@ -1,5 +1,5 @@
 import type { ApplicationConfig } from "@angular/core"
-import { provideRouter, withViewTransitions } from "@angular/router"
+import { provideRouter, withViewTransitions, withHashLocation } from "@angular/router"
 import { routes } from "./app.routes"
 import { provideAnimations } from "@angular/platform-browser/animations"
 import { provideHttpClient, withInterceptors } from "@angular/common/http"
@@ -11,7 +11,7 @@ export { environment }
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideRouter(routes, withViewTransitions()),
+    provideRouter(routes, withViewTransitions(), withHashLocation()),
     provideAnimations(),
     provideHttpClient(withInterceptors([authInterceptor])),
     { provide: 'API_URL', useValue: environment.apiUrl }

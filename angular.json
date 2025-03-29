@@ -28,6 +28,8 @@
             "assets": [
               "src/favicon.ico",
               "src/assets",
+              "src/_redirects",
+              "src/web.config",
               {
                 "glob": "**/*",
                 "input": "public"
