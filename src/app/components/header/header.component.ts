@@ -23,6 +23,7 @@ import { MatIconModule } from "@angular/material/icon"
 })
 export class HeaderComponent {
   isDarkMode: boolean | undefined;
+  isMobileMenuOpen: boolean = false;
 
   constructor(
     @Inject(AuthService) public authService: AuthService,
@@ -35,6 +36,13 @@ export class HeaderComponent {
 
   logout(): void {
     this.authService.logout()
+  }
+
+  toggleMobileMenu(): void {
+    this.isMobileMenuOpen = !this.isMobileMenuOpen;
+    if (isPlatformBrowser(this.platformId)) {
+      document.body.classList.toggle('mobile-menu-open', this.isMobileMenuOpen);
+    }
   }
 
   toggleDarkMode(): void {
@@ -64,4 +72,3 @@ export class HeaderComponent {
     }
   }
 }
-

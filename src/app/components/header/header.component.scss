@@ -1,5 +1,3 @@
-
-
 .header {
     display: flex;
     justify-content: space-between;
@@ -199,5 +197,207 @@ display: inline-block;
     .dark-icon {
       opacity: 1;
     }
+  }
+}
+
+/* Mobile menu styles */
+.mobile-menu-toggle {
+  display: none;
+  cursor: pointer;
+  width: 30px;
+  height: 24px;
+  position: relative;
+  z-index: 10;
+}
+
+.hamburger-icon {
+  position: absolute;
+  width: 30px;
+  height: 3px;
+  background-color: var(--text-color);
+  top: 50%;
+  transform: translateY(-50%);
+  transition: background-color 0.3s ease;
+  
+  &::before, &::after {
+    content: '';
+    position: absolute;
+    width: 30px;
+    height: 3px;
+    background-color: var(--text-color);
+    transition: transform 0.3s ease;
+  }
+  
+  &::before {
+    top: -8px;
+  }
+  
+  &::after {
+    bottom: -8px;
+  }
+}
+
+.mobile-menu {
+  display: none;
+  position: fixed;
+  top: 0;
+  right: -100%;
+  width: 80%;
+  max-width: 300px;
+  height: 100vh;
+  background-color: var(--background-color);
+  box-shadow: -2px 0 10px var(--shadow-color);
+  z-index: 1000;
+  transition: right 0.3s ease;
+  overflow-y: auto;
+  
+  &.active {
+    right: 0;
+  }
+  
+  .mobile-menu-header {
+    display: flex;
+    justify-content: flex-end;
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    
+    .close-menu {
+      cursor: pointer;
+      
+      mat-icon {
+        color: var(--text-color);
+        font-size: 24px;
+      }
+    }
+  }
+  
+  .mobile-nav {
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+    gap: 1.5rem;
+    
+    .nav-link {
+      font-size: 1.1rem;
+      padding: 0.5rem 0;
+      width: 100%;
+      text-align: left;
+    }
+    
+    .register-btn, .logout-btn {
+      width: 100%;
+      text-align: center;
+      margin-top: 0.5rem;
+    }
+    
+    /* Make register button appear as a regular link in mobile menu */
+    a.register-btn {
+      background-color: transparent;
+      color: var(--text-color);
+      padding: 0.5rem 0;
+      border-radius: 0;
+      text-align: left;
+      
+      &:hover, &.active {
+        background-color: transparent;
+        color: var(--primary-purple);
+      }
+      
+      &:after {
+        content: '';
+        position: absolute;
+        width: 0;
+        height: 2px;
+        bottom: 0;
+        left: 0;
+        background-color: var(--primary-purple);
+        transition: width 0.3s ease;
+      }
+      
+      &:hover:after, &.active:after {
+        width: 100%;
+        display: block;
+      }
+    }
+    
+    .mobile-theme-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-color);
+      
+      span {
+        color: var(--text-color);
+        font-weight: 500;
+      }
+    }
+  }
+}
+
+/* Overlay for mobile menu */
+body.mobile-menu-open::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+  .desktop-nav {
+    display: none;
+  }
+  
+  .mobile-menu-toggle {
+    display: block;
+  }
+  
+  .mobile-menu {
+    display: block;
+  }
+  
+  .header {
+    padding: 1.25rem 1rem; /* Increased padding for tablets */
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .logo {
+    min-width: 120px;
+    min-height: 35px; /* Increased min-height for tablets */
+    display: flex;
+    align-items: center;
+  }
+
+  .logo-image {
+    width: 120px; /* Increased logo size */
+    height: auto;
+  }
+}
+
+/* Small mobile devices */
+@media (max-width: 480px) {
+  .header {
+    padding: 1rem 0.75rem; /* Significantly increased from previous value */
+  }
+
+  .logo {
+    min-width: 100px;
+    min-height: 32px; /* Increased from previous value */
+  }
+
+  .logo-image {
+    width: 100px; /* Increased from previous value */
+  }
+  
+  .mobile-menu {
+    width: 85%;
   }
 }

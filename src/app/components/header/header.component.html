@@ -8,7 +8,9 @@
       class="logo-image" 
       routerLink="/">
   </div>
-  <nav class="nav">
+  
+  <!-- Desktop Navigation -->
+  <nav class="nav desktop-nav">
     <ng-container *ngIf="(authService.user$ | async) as user; else loginLinks">
       <a routerLink="/notes" routerLinkActive="active" class="nav-link">My Notes</a>
       <button (click)="logout()" class="nav-link logout-btn">Logout</button>
@@ -25,5 +27,38 @@
       </span>
     </label>
   </nav>
+  
+  <!-- Mobile Hamburger Icon -->
+  <div class="mobile-menu-toggle" (click)="toggleMobileMenu()">
+    <span class="hamburger-icon"></span>
+  </div>
+  
+  <!-- Mobile Navigation Menu -->
+  <div class="mobile-menu" [class.active]="isMobileMenuOpen">
+    <div class="mobile-menu-header">
+      <div class="close-menu" (click)="toggleMobileMenu()">
+        <mat-icon>close</mat-icon>
+      </div>
+    </div>
+    <nav class="mobile-nav">
+      <ng-container *ngIf="(authService.user$ | async) as user; else mobileLoginLinks">
+        <a routerLink="/notes" routerLinkActive="active" class="nav-link" (click)="toggleMobileMenu()">My Notes</a>
+        <button (click)="logout(); toggleMobileMenu()" class="nav-link logout-btn">Logout</button>
+      </ng-container>
+      <ng-template #mobileLoginLinks>
+        <a routerLink="/login" routerLinkActive="active" class="nav-link" (click)="toggleMobileMenu()">Login</a>
+        <a routerLink="/register" routerLinkActive="active" class="nav-link register-btn" (click)="toggleMobileMenu()">Register</a>
+      </ng-template>
+      <div class="mobile-theme-toggle">
+        <span>Theme</span>
+        <label class="switch">
+          <input type="checkbox" [checked]="isDarkMode" (change)="toggleDarkMode()">
+          <span class="slider round">
+            <mat-icon class="sun-icon">light_mode</mat-icon>
+            <mat-icon class="moon-icon">dark_mode</mat-icon>
+          </span>
+        </label>
+      </div>
+    </nav>
+  </div>
 </header>
-
