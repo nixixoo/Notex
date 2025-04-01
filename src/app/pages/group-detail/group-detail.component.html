@@ -116,9 +116,16 @@
             </div>
           </div>
           
-          <button type="submit" class="submit-btn" [disabled]="editGroupForm.invalid || isLoading">
-            {{ isLoading ? 'Saving...' : 'Save Changes' }}
-          </button>
+          <div class="form-group">
+            <div class="button-container">
+              <button type="submit" class="submit-btn" [disabled]="editGroupForm.invalid || isLoading">
+                {{ isLoading ? 'Saving...' : 'Save Changes' }}
+              </button>
+              <button type="button" class="cancel-btn" (click)="toggleEditGroupForm()">
+                Cancel
+              </button>
+            </div>
+          </div>
         </form>
       </div>
 
@@ -196,9 +203,16 @@
             </div>
           </div>
           
-          <button type="submit" class="submit-btn" [disabled]="newNoteForm.invalid || isLoading">
-            {{ isLoading ? 'Creating...' : 'Create Note' }}
-          </button>
+          <div class="form-group">
+            <div class="button-container">
+              <button type="submit" class="create-btn" [disabled]="newNoteForm.invalid || isLoading">
+                {{ isLoading ? 'Creating...' : 'Create Note' }}
+              </button>
+              <button type="button" class="cancel-btn" (click)="toggleNewNoteForm()">
+                Cancel
+              </button>
+            </div>
+          </div>
         </form>
       </div>
 

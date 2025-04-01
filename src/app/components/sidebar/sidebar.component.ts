@@ -36,9 +36,11 @@ export class SidebarComponent {
 
   handleNavClick(event: MouseEvent) {
     event.stopPropagation();
-    // Keep sidebar open on desktop
+    // Keep sidebar open on desktop, close it on mobile
     if (window.innerWidth > 768) {
       this.sidebarService.setOpenState(true);
+    } else {
+      this.sidebarService.setOpenState(false);
     }
   }
 }

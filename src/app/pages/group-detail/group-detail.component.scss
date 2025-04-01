@@ -288,6 +288,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  margin-bottom: 0.5rem;
 
   label {
     font-weight: 500;
@@ -552,6 +553,53 @@ input:checked + .slider:before {
   }
 }
 
+.button-container {
+  display: flex;
+  width: 100%;
+  gap: 0;
+  margin-top: 1rem;
+}
+
+.create-btn {
+  flex: 1;
+  background-color: var(--primary-purple);
+  color: var(--background-color);
+  border: none;
+  border-radius: 4px 0 0 4px;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+
+  &:hover:not(:disabled) {
+    background-color: var(--secondary-purple);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+}
+
+.cancel-btn {
+  flex: 1;
+  background-color: transparent;
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  border-left: none;
+  border-radius: 0 4px 4px 0;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background-color: var(--surface-color);
+  }
+}
+
 // Color picker styles
 .color-picker-container {
   margin-bottom: 1rem;
@@ -599,5 +647,63 @@ input:checked + .slider:before {
         color: var(--text-color);
       }
     }
+  }
+}
+
+/* Mobile responsive styles - Phone resolution only */
+@media (max-width: 480px) {
+  .group-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .header-left {
+    width: 100%;
+    
+    .group-title {
+      max-width: calc(100% - 48px);
+    }
+  }
+  
+  .header-controls {
+    width: 100%;
+    justify-content: space-between;
+    padding-right: 0.5rem;
+    
+    .switch, .preview-label {
+      order: 1;
+    }
+    
+    .edit-group-btn {
+      order: 2;
+      margin-left: auto;
+    }
+  }
+  
+  .notes-grid {
+    padding: 1rem;
+    gap: 1rem;
+  }
+  
+  .main-content {
+    padding: 1rem;
+  }
+
+  .button-container {
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+  }
+
+  .create-btn, .cancel-btn {
+    flex: none;
+    width: 100%;
+    border-radius: 4px;
+    border: none;
+  }
+
+  .cancel-btn {
+    border: 1px solid var(--border-color);
   }
 }

@@ -563,3 +563,32 @@ input:checked + .slider:before {
     }
   }
 }
+
+/* Mobile responsive styles - Phone resolution only */
+@media (max-width: 480px) {
+  .notes-grid {
+    padding: 1; /* Remove padding on phone resolution */
+    gap: 1rem; /* Slightly reduce gap for better use of space */
+  }
+  
+  .main-content {
+    padding: 1rem; /* Reduce padding on main content for phone */
+  }
+
+  .button-container {
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+  }
+
+  .create-btn, .cancel-btn {
+    flex: none;
+    width: 100%;
+    border-radius: 4px;
+    border: none;
+  }
+
+  .cancel-btn {
+    border: 1px solid var(--border-color);
+  }
+}

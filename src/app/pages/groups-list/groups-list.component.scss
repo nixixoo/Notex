@@ -237,6 +237,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  margin-bottom: 0.5rem;
 
   label {
     font-weight: 500;
@@ -320,27 +321,20 @@
   justify-content: flex-end;
 }
 
-.cancel-btn {
-  background: none;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  padding: 0.75rem 1rem;
-  font-size: 1rem;
-  color: var(--text-color);
-  cursor: pointer;
-  transition: all 0.3s ease;
-
-  &:hover {
-    background-color: var(--surface-color);
-  }
+.button-container {
+  display: flex;
+  width: 100%;
+  gap: 0;
+  margin-top: 1rem;
 }
 
-.submit-btn {
+.create-btn {
+  flex: 1;
   background-color: var(--primary-purple);
   color: var(--background-color);
   border: none;
-  border-radius: 4px;
-  padding: 0.75rem 1rem;
+  border-radius: 4px 0 0 4px;
+  padding: 0.75rem 1.5rem;
   font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
@@ -353,6 +347,24 @@
   &:disabled {
     opacity: 0.7;
     cursor: not-allowed;
+  }
+}
+
+.cancel-btn {
+  flex: 1;
+  background-color: transparent;
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  border-left: none;
+  border-radius: 0 4px 4px 0;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background-color: var(--surface-color);
   }
 }
 
@@ -429,5 +441,34 @@
     width: 16px;
     color: white;
     text-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+  }
+}
+
+/* Mobile responsive styles - Phone resolution only */
+@media (max-width: 480px) {
+  .groups-grid {
+    padding: 1rem; /* Remove padding on phone resolution */
+    gap: 1.25rem; /* Slightly reduce gap for better use of space */
+  }
+  
+  .main-content {
+    padding: 1rem; /* Reduce padding on main content for phone */
+  }
+
+  .button-container {
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+  }
+
+  .create-btn, .cancel-btn {
+    flex: none;
+    width: 100%;
+    border-radius: 4px;
+    border: none;
+  }
+
+  .cancel-btn {
+    border: 1px solid var(--border-color);
   }
 }

@@ -94,9 +94,16 @@
             </div>
           </div>
           
-          <button type="submit" class="submit-btn" [disabled]="newGroupForm.invalid || isLoading">
-            {{ isLoading ? 'Creating...' : 'Create Group' }}
-          </button>
+          <div class="form-group">
+            <div class="button-container">
+              <button type="submit" class="create-btn" [disabled]="newGroupForm.invalid || isLoading">
+                {{ isLoading ? 'Creating...' : 'Create Group' }}
+              </button>
+              <button type="button" class="cancel-btn" (click)="toggleNewGroupForm()">
+                Cancel
+              </button>
+            </div>
+          </div>
         </form>
       </div>
       
