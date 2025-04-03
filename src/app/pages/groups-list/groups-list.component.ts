@@ -260,10 +260,7 @@ export class GroupsListComponent implements OnInit {
     event.stopPropagation();
   }
 
-  convertToPermanentAccount() {
-    // Implement the conversion logic here
-    console.log('Converting to permanent account...');
-  }
+
 
   get name() {
     return this.newGroupForm.get('name');

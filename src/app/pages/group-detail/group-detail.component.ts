@@ -341,7 +341,6 @@ export class GroupDetailComponent implements OnInit, OnDestroy {
   removeNoteFromGroup(note: Note): void {
     if (!this.group) return
 
-    console.log('[DEBUG] Starting removeNoteFromGroup', { noteId: note.id, noteGroupId: note.groupId });
     this.isLoading = true
 
     // Create a proper UpdateNoteRequest with groupId set to null
@@ -350,26 +349,20 @@ export class GroupDetailComponent implements OnInit, OnDestroy {
       groupId: null
     }
 
-    console.log('[DEBUG] Sending update request', { noteId: note.id, updatedNote });
 
     this.subscriptions.push(
       this.notesService.updateNote(note.id, updatedNote).subscribe({
         next: (result) => {
-          console.log('[DEBUG] Update successful', { result });
           this.isLoading = false
 
           // Remove note from local array
           this.notes = this.notes.filter(n => n.id !== note.id)
-          console.log('[DEBUG] Removed note from local array', { remainingNotes: this.notes.length });
 
           // Refresh counts
           this.loadCounts()
 
           // Force refresh the notes service
-          console.log('[DEBUG] Refreshing notes list');
-          this.notesService.getNotes(note.status || 'active').subscribe(notes => {
-            console.log('[DEBUG] Notes list refreshed', { notesCount: notes.length });
-          });
+          this.notesService.getNotes(note.status || 'active').subscribe();
         },
         error: (error) => {
           console.error("[DEBUG] Error removing note from group:", error)

@@ -24,7 +24,6 @@ export class NotesService {
       if (user) {
         this.loadNotes('active');
       } else if (this.authService.isGuestMode()) {
-        console.log('Guest mode detected, loading notes from local storage');
         this.notesSubject.next(this.getLocalNotes().filter(note => 
           (note.status === 'active' || !note.status) && 
           (!note.groupId)
@@ -37,7 +36,6 @@ export class NotesService {
     // Also subscribe to guest mode changes
     this.authService.guestMode$.subscribe(isGuestMode => {
       if (isGuestMode) {
-        console.log('Guest mode enabled, loading notes from local storage');
         this.notesSubject.next(this.getLocalNotes().filter(note => 
           (note.status === 'active' || !note.status) && 
           (!note.groupId)
@@ -114,18 +112,13 @@ export class NotesService {
   }
 
   createNote(noteData: CreateNoteRequest): Observable<Note> {
-    console.log('Creating note with data:', noteData);
-    console.log('Guest mode status:', this.authService.isGuestMode());
-    console.log('Logged in status:', this.authService.isLoggedIn());
     
     // Force guest mode for now to ensure local storage is used
     if (!this.authService.isLoggedIn()) {
-      console.log('User not logged in, ensuring guest mode is enabled');
       this.authService.enableGuestMode();
     }
     
     if (this.authService.isGuestMode()) {
-      console.log('Creating note in local storage (guest mode)');
       // For guest mode, create note in local storage
       const notes = this.getLocalNotes();
       const newNote: Note = {
@@ -154,7 +147,6 @@ export class NotesService {
       
       return of(newNote);
     } else if (this.authService.isLoggedIn()) {
-      console.log('Creating note via API (logged in)');
       // For authenticated users, create note via API
       return this.apiService.post<Note>('notes', noteData).pipe(
         tap(() => this.loadNotes('active')),

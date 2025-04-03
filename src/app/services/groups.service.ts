@@ -78,7 +78,6 @@ export class GroupsService {
         }
       });
       
-      console.log("Groups database initialized successfully");
     } catch (error) {
       console.error("Error initializing groups database:", error);
     }
@@ -165,7 +164,6 @@ export class GroupsService {
   createGroup(groupData: CreateGroupRequest): Observable<Group> {
     // Guest Mode Flow
     if (this.authService.isGuestMode()) {
-      console.log("[GroupsService] Creating local guest group");
       const id = Date.now().toString();
       const newGroup: Group = {
         id,
@@ -191,7 +189,6 @@ export class GroupsService {
 
     // Authenticated User Flow
     if (this.authService.isAuthenticated()) {
-      console.log("[GroupsService] Creating cloud group");
       const currentUser = this.authService.getCurrentUser();
 
       if (!currentUser?.id) {

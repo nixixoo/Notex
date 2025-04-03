@@ -58,7 +58,6 @@ export class RegisterComponent {
         retry({
           count: 2,
           delay: (error, retryCount) => {
-            console.log(`Registration attempt ${retryCount} failed, retrying...`);
             return timer(1000); // 1 second delay
           }
         }),

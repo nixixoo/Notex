@@ -46,7 +46,6 @@ export class AuthService {
     // Check for token
     const token = localStorage.getItem(this.TOKEN_KEY);
     const user = this.getUserFromStorage();
-    console.log('Auth state initialized with token:', token ? 'Token exists' : 'No token');
     
     if (token && user) {
       // Set the user from storage immediately to prevent flickering
@@ -61,7 +60,6 @@ export class AuthService {
     if (!this.isBrowser || this.isValidatingToken) return of(false);
     
     const token = localStorage.getItem(this.TOKEN_KEY);
-    console.log('Validating token:', token ? 'Token exists' : 'No token');
     if (!token) {
       this.clearAuthData();
       return of(false);
@@ -73,7 +71,6 @@ export class AuthService {
       retry(2), // Retry up to 2 times
       delay(500), // Add a small delay between retries
       tap(user => {
-        console.log('Token validated successfully, user:', user);
         this.userSubject.next(user);
         localStorage.setItem(this.USER_KEY, JSON.stringify(user));
         this.isValidatingToken = false;
@@ -95,7 +92,6 @@ export class AuthService {
     return this.apiService.post<AuthResponse>('auth/login', credentials).pipe(
       tap(response => {
         if (response.token) {
-          console.log('Login successful, storing token');
           localStorage.setItem(this.TOKEN_KEY, response.token);
           localStorage.setItem(this.USER_KEY, JSON.stringify(response.user));
           this.userSubject.next(response.user);
@@ -111,7 +107,6 @@ export class AuthService {
     return this.apiService.post<AuthResponse>('auth/register', userData).pipe(
       tap(response => {
         if (response.token) {
-          console.log('Registration successful, storing token');
           localStorage.setItem(this.TOKEN_KEY, response.token);
           localStorage.setItem(this.USER_KEY, JSON.stringify(response.user));
           this.userSubject.next(response.user);
@@ -167,7 +162,6 @@ export class AuthService {
 
   setSession(response: AuthResponse): void {
     if (response.token) {
-      console.log('Setting session with token');
       localStorage.setItem(this.TOKEN_KEY, response.token);
       localStorage.setItem(this.USER_KEY, JSON.stringify(response.user));
       this.userSubject.next(response.user);
@@ -185,7 +179,6 @@ export class AuthService {
     localStorage.setItem(this.GUEST_KEY, 'true');
     this.guestModeSubject.next(true);
     
-    console.log('Guest mode enabled successfully');
   }
 
   isAuthenticated(): boolean {

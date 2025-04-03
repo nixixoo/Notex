@@ -189,8 +189,5 @@ export class NoteEditorComponent implements OnInit {
     this.color?.setValue(colorValue)
   }
 
-  convertToPermanentAccount(): void {
-    // Implement the logic to convert guest account to permanent account
-    console.log('Converting to permanent account...')
-  }
+
 }

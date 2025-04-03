@@ -89,7 +89,6 @@ export class LoginComponent {
   }
 
   enterGuestMode(): void {
-    console.log('Guest mode button clicked');
     
     // First logout to clear any existing auth state
     this.authService.logout();
@@ -99,7 +98,6 @@ export class LoginComponent {
     
     // Add a small delay before navigation to ensure state is updated
     setTimeout(() => {
-      console.log('Navigating to notes page');
       this.router.navigate(['/notes']);
     }, 100);
   }

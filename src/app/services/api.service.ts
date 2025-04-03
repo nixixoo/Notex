@@ -27,9 +27,6 @@ export class ApiService {
       // Check if we're on Vercel by looking at the hostname
       const isVercel = window.location.hostname.includes('vercel.app');
       this.apiUrl = isVercel ? this.PROD_API_URL : this.DEV_API_URL;
-      console.log('Running on Vercel:', isVercel);
-      console.log('API URL:', this.apiUrl);
-      console.log('Using CORS proxy:', this.useProxy);
     } else {
       // Default to production for SSR
       this.apiUrl = this.PROD_API_URL;
@@ -48,10 +45,8 @@ export class ApiService {
       
       // Don't send any token if in guest mode
       if (isGuestMode) {
-        console.log('Guest mode detected, not sending authorization token');
         token = null;
       } else {
-        console.log('API Service getHeaders - Token exists:', !!token);
       }
     }
     
@@ -61,7 +56,6 @@ export class ApiService {
       'X-Requested-With': 'XMLHttpRequest'
     });
     
-    console.log('Authorization header:', headers.get('Authorization') || 'No Authorization header');
     return headers;
   }
 
@@ -75,7 +69,6 @@ export class ApiService {
   // Generic GET request
   get<T>(endpoint: string): Observable<T> {
     const url = this.getFullUrl(endpoint);
-    console.log(`Making GET request to: ${url}`);
     return this.http.get<T>(url, { 
       headers: this.getHeaders(),
       withCredentials: false
@@ -85,7 +78,6 @@ export class ApiService {
   // Generic POST request
   post<T>(endpoint: string, data: any): Observable<T> {
     const url = this.getFullUrl(endpoint);
-    console.log(`Making POST request to: ${url}`, data);
     return this.http.post<T>(url, data, { 
       headers: this.getHeaders(),
       withCredentials: false
@@ -95,7 +87,6 @@ export class ApiService {
   // Generic PUT request
   put<T>(endpoint: string, data: any): Observable<T> {
     const url = this.getFullUrl(endpoint);
-    console.log(`Making PUT request to: ${url}`, data);
     return this.http.put<T>(url, data, { 
       headers: this.getHeaders(),
       withCredentials: false
@@ -105,7 +96,6 @@ export class ApiService {
   // Generic DELETE request
   delete<T>(endpoint: string): Observable<T> {
     const url = this.getFullUrl(endpoint);
-    console.log(`Making DELETE request to: ${url}`);
     return this.http.delete<T>(url, { 
       headers: this.getHeaders(),
       withCredentials: false
