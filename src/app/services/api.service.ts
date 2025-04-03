@@ -15,6 +15,7 @@ export class ApiService {
   // Service properties
   private apiUrl: string;
   private readonly TOKEN_KEY = "auth_token"; // Match the key used in AuthService
+  private readonly GUEST_KEY = "guest_mode"; // Match the key used in AuthService
   private useProxy: boolean = false; // Always disable proxy - we have proper CORS config now
 
   constructor(
@@ -38,11 +39,20 @@ export class ApiService {
   // Helper method to get auth headers
   private getHeaders(): HttpHeaders {
     let token = null;
+    let isGuestMode = false;
     
     // Only access localStorage in browser environment
     if (isPlatformBrowser(this.platformId)) {
       token = localStorage.getItem(this.TOKEN_KEY);
-      console.log('API Service getHeaders - Token exists:', !!token);
+      isGuestMode = localStorage.getItem(this.GUEST_KEY) === 'true';
+      
+      // Don't send any token if in guest mode
+      if (isGuestMode) {
+        console.log('Guest mode detected, not sending authorization token');
+        token = null;
+      } else {
+        console.log('API Service getHeaders - Token exists:', !!token);
+      }
     }
     
     const headers = new HttpHeaders({

@@ -20,13 +20,33 @@
       
       <div class="form-group">
         <label for="password">Password</label>
-        <input 
-          type="password" 
-          id="password" 
-          formControlName="password" 
-          class="form-control"
-          [class.is-invalid]="password?.invalid && (password?.dirty || password?.touched)"
-        >
+        <div class="password-input-wrapper">
+          <input 
+            [type]="hidePassword ? 'password' : 'text'" 
+            id="password" 
+            formControlName="password" 
+            class="form-control password-input"
+            [class.is-invalid]="password?.invalid && (password?.dirty || password?.touched)"
+          >
+          <button 
+            type="button" 
+            class="password-toggle-btn" 
+            (click)="hidePassword = !hidePassword" 
+            [attr.aria-label]="hidePassword ? 'Show password' : 'Hide password'"
+          >
+            <div class="icon-container">
+              <svg class="eye-icon" [class.visible]="hidePassword" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+              <svg class="eye-icon" [class.visible]="!hidePassword" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+                <line x1="1" y1="1" x2="23" y2="23"></line>
+              </svg>
+            </div>
+          </button>
+        </div>
         <div *ngIf="password?.invalid && (password?.dirty || password?.touched)" class="error-message">
           <span *ngIf="password?.errors?.['required']">Password is required</span>
           <span *ngIf="password?.errors?.['minlength']">Password must be at least 6 characters</span>
@@ -36,18 +56,25 @@
       <button type="submit" class="submit-btn" [disabled]="loginForm.invalid || isLoading">
         {{ isLoading ? 'Signing in...' : 'Sign In' }}
       </button>
-      <div *ngIf="errorMessage" class="error-message auth-error">
-        {{ errorMessage }}
-      </div>
       
-
+      <!-- Error message alert -->
+      <div *ngIf="errorMessage" class="error-alert" role="alert">
+        <div class="error-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+        </div>
+        <div class="error-message">{{ errorMessage }}</div>
+      </div>
       
       <div class="auth-redirect">
         Don't have an account? <a routerLink="/register">Register</a>
       </div>
 
       <div class="guest-cta">
-        <button (click)="enterGuestMode()" class="guest-cta-btn">
+        <button type="button" (click)="enterGuestMode()" class="guest-cta-btn">
           Continue as Guest
         </button>
       </div>

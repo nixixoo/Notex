@@ -178,7 +178,14 @@ export class AuthService {
   }
 
   enableGuestMode(): void {
-    this.setGuestMode(true);
+    // First clear any existing auth data
+    this.clearAuthData();
+    
+    // Then set guest mode
+    localStorage.setItem(this.GUEST_KEY, 'true');
+    this.guestModeSubject.next(true);
+    
+    console.log('Guest mode enabled successfully');
   }
 
   isAuthenticated(): boolean {

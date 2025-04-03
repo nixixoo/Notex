@@ -25,6 +25,7 @@ export class RegisterComponent {
   registerForm: FormGroup
   isLoading = false;
   errorMessage: string = '';
+  hidePassword = true; // For password visibility toggle
 
   constructor(
     @Inject(FormBuilder) private fb: FormBuilder,
@@ -63,7 +64,25 @@ export class RegisterComponent {
         }),
         catchError(error => {
           console.error("Registration error after retries:", error);
-          this.errorMessage = "Registration failed. Please try again.";
+          this.isLoading = false;
+          
+          // Handle specific error cases
+          if (error instanceof ErrorEvent) {
+            this.errorMessage = 'A network error occurred. Please check your connection.';
+          } else if (error.status === 409) {
+            this.errorMessage = 'Username already exists. Please choose a different username.';
+          } else if (error.status === 400) {
+            this.errorMessage = 'Invalid registration data. Please check your information.';
+          } else if (error.status === 429) {
+            this.errorMessage = 'Too many registration attempts. Please try again later.';
+          } else {
+            // Extract message from different possible locations
+            this.errorMessage = error.error?.message || 
+                               error.error || 
+                               error.message || 
+                               'Registration failed. Please try again later.';
+          }
+          
           return throwError(() => error);
         })
       )
@@ -74,9 +93,8 @@ export class RegisterComponent {
           this.router.navigate(["/notes"]);
         },
         error: (error) => {
-          this.isLoading = false;
+          // Error is already handled in the catchError operator
           console.error("Registration error:", error);
-          this.errorMessage = "Registration failed. Please try again.";
         },
       });
   }

@@ -6,7 +6,8 @@ export const authGuard: CanActivateFn = (route, state) => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
-  if (authService.isLoggedIn()) {
+  // Allow access if user is logged in OR in guest mode
+  if (authService.isLoggedIn() || authService.isGuestMode()) {
     return true;
   }
 

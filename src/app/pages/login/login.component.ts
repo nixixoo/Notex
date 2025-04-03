@@ -26,6 +26,7 @@ export class LoginComponent {
   loginForm: FormGroup
   isLoading = false;
   errorMessage: string | null = null;
+  hidePassword = true; // For password visibility toggle
 
   constructor(
     @Inject(FormBuilder) private fb: FormBuilder,
@@ -60,9 +61,20 @@ export class LoginComponent {
       error: (error) => {
         this.isLoading = false
         console.error("Login error:", error)
-        // Handle error (show message, etc.)
+        
+        // Handle network errors
         if (error instanceof ErrorEvent) {
           this.errorMessage = 'A network error occurred. Please check your connection.';
+        }
+        // Handle specific authentication errors
+        else if (error.status === 401) {
+          this.errorMessage = 'Invalid username or password. Please try again.';
+        }
+        else if (error.status === 404) {
+          this.errorMessage = 'User not found. Please check your username.';
+        }
+        else if (error.status === 429) {
+          this.errorMessage = 'Too many login attempts. Please try again later.';
         }
         // Handle server-side errors
         else {
@@ -70,29 +82,25 @@ export class LoginComponent {
           this.errorMessage = error.error?.message ||  // If exists in error.error.message
                              error.error ||           // If error.error is the message string
                              error.message ||         // If message in error.message
-                             'An unexpected error occurred';
+                             'An unexpected error occurred. Please try again later.';
         }
-      
-
       },
     })
   }
-// Add to LoginComponent class
-enterGuestMode(): void {
-  this.authService.logout();
-  this.authService.enableGuestMode();
-  
-  const guestUser: User = {
-    id: 'guest-' + Date.now().toString(),
-    username: 'guest'
-  };
-  
-  this.authService.setSession({
-    user: guestUser,
-    token: 'guest-token'
-  });
-  
-  this.router.navigate(['/notes']);
-}
 
+  enterGuestMode(): void {
+    console.log('Guest mode button clicked');
+    
+    // First logout to clear any existing auth state
+    this.authService.logout();
+    
+    // Then enable guest mode
+    this.authService.enableGuestMode();
+    
+    // Add a small delay before navigation to ensure state is updated
+    setTimeout(() => {
+      console.log('Navigating to notes page');
+      this.router.navigate(['/notes']);
+    }, 100);
+  }
 }

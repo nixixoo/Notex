@@ -1,5 +1,5 @@
 import { Injectable, Inject } from "@angular/core"
-import { BehaviorSubject, type Observable, from, of } from "rxjs"
+import { BehaviorSubject, type Observable, from, of, throwError } from "rxjs"
 import { map, catchError, tap } from "rxjs/operators"
 import type { Note, CreateNoteRequest, UpdateNoteRequest } from "../models/note.model"
 import { AuthService } from "./auth.service"
@@ -24,9 +24,24 @@ export class NotesService {
       if (user) {
         this.loadNotes('active');
       } else if (this.authService.isGuestMode()) {
-        this.notesSubject.next(this.getLocalNotes());
+        console.log('Guest mode detected, loading notes from local storage');
+        this.notesSubject.next(this.getLocalNotes().filter(note => 
+          (note.status === 'active' || !note.status) && 
+          (!note.groupId)
+        ));
       } else {
         this.notesSubject.next([]);
+      }
+    });
+
+    // Also subscribe to guest mode changes
+    this.authService.guestMode$.subscribe(isGuestMode => {
+      if (isGuestMode) {
+        console.log('Guest mode enabled, loading notes from local storage');
+        this.notesSubject.next(this.getLocalNotes().filter(note => 
+          (note.status === 'active' || !note.status) && 
+          (!note.groupId)
+        ));
       }
     });
   }
@@ -99,7 +114,18 @@ export class NotesService {
   }
 
   createNote(noteData: CreateNoteRequest): Observable<Note> {
+    console.log('Creating note with data:', noteData);
+    console.log('Guest mode status:', this.authService.isGuestMode());
+    console.log('Logged in status:', this.authService.isLoggedIn());
+    
+    // Force guest mode for now to ensure local storage is used
+    if (!this.authService.isLoggedIn()) {
+      console.log('User not logged in, ensuring guest mode is enabled');
+      this.authService.enableGuestMode();
+    }
+    
     if (this.authService.isGuestMode()) {
+      console.log('Creating note in local storage (guest mode)');
       // For guest mode, create note in local storage
       const notes = this.getLocalNotes();
       const newNote: Note = {
@@ -118,9 +144,17 @@ export class NotesService {
       
       notes.push(newNote);
       this.saveLocalNotes(notes);
-      this.loadNotes('active');
+      
+      // Update the notes observable
+      const filteredNotes = this.getLocalNotes().filter(note => 
+        (note.status === 'active' || !note.status) && 
+        (!note.groupId)
+      );
+      this.notesSubject.next(filteredNotes);
+      
       return of(newNote);
     } else if (this.authService.isLoggedIn()) {
+      console.log('Creating note via API (logged in)');
       // For authenticated users, create note via API
       return this.apiService.post<Note>('notes', noteData).pipe(
         tap(() => this.loadNotes('active')),
@@ -129,8 +163,10 @@ export class NotesService {
           throw error;
         })
       );
+    } else {
+      console.error('Failed to create note: User is neither in guest mode nor logged in');
+      return throwError(() => new Error('User must be logged in or in guest mode to create notes'));
     }
-    throw new Error('User must be logged in or in guest mode to create notes');
   }
 
   updateNote(id: string, updateData: UpdateNoteRequest): Observable<Note | null> {
