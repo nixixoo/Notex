@@ -1,6 +1,6 @@
 import { Injectable, Inject } from "@angular/core";
 import { BehaviorSubject, Observable, from, of } from "rxjs";
-import { map, catchError, tap } from "rxjs/operators";
+import { map, catchError, tap, switchMap } from "rxjs/operators";
 import { createClient, type ResultSet, type Row } from "@libsql/client";
 import { Group, CreateGroupRequest, UpdateGroupRequest } from "../models/group.model";
 import { AuthService } from "./auth.service";
@@ -329,12 +329,20 @@ export class GroupsService {
     const userId = this.authService.getCurrentUser()?.id;
     if (!userId) throw new Error("Not authenticated");
 
+    // First, remove all notes from this group by setting their groupId to null
     return from(
       this.client.execute({
-        sql: "DELETE FROM groups WHERE id = ? AND userId = ?",
+        sql: "UPDATE notes SET groupId = NULL WHERE groupId = ? AND userId = ?",
         args: [id, userId],
       }),
     ).pipe(
+      // Then delete the group
+      switchMap(() => {
+        return this.client.execute({
+          sql: "DELETE FROM groups WHERE id = ? AND userId = ?",
+          args: [id, userId],
+        });
+      }),
       map(() => {
         const currentGroups = this.groupsSubject.value;
         const updatedGroups = currentGroups.filter((group) => group.id !== id);
