@@ -7,13 +7,7 @@
   </app-sidebar>
   
   <div class="main-content">
-    <div *ngIf="authService.isGuestMode()" class="guest-banner">
-      <span>You're using guest mode. Groups will be saved locally.</span>
-      <button (click)="convertToPermanentAccount()" class="guest-btn">
-        Create Permanent Account
-      </button>
-    </div>
-
+    
     <div class="groups-container">
       <div class="groups-header">
         <h1 class="groups-title">My Groups</h1>

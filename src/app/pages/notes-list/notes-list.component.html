@@ -7,9 +7,9 @@
   </app-sidebar>
   
   <div class="main-content">
-    <div *ngIf="authService.isGuestMode()" class="guest-banner">
+    <div *ngIf="authService.isGuestMode() && currentStatus === 'active'" class="guest-banner">
       <span>You're using guest mode. Notes will be saved locally.</span>
-      <button (click)="convertToPermanentAccount()" class="guest-btn">
+      <button class="guest-btn">
         Create Permanent Account
       </button>
     </div>

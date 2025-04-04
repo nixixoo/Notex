@@ -10,13 +10,6 @@
   <app-chat-sidebar *ngIf="note" [noteContent]="noteForm.get('content')?.value || ''" [noteId]="note.id"></app-chat-sidebar>
 
   <div class="editor-container">
-    <div *ngIf="authService.isGuestMode()" class="guest-banner">
-      <span>You're using guest mode. Notes will be saved locally.</span>
-      <button (click)="convertToPermanentAccount()" class="guest-btn">
-        Create Permanent Account
-      </button>
-    </div>
-
     <div class="editor-header">
       <button class="back-btn" (click)="location.back()">
         <mat-icon>arrow_back</mat-icon>

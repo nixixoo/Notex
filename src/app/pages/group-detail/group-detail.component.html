@@ -7,13 +7,6 @@
   </app-sidebar>
   
   <div class="main-content">
-    <div *ngIf="authService.isGuestMode()" class="guest-banner">
-      <span>You're using guest mode. Notes will be saved locally.</span>
-      <button (click)="convertToPermanentAccount()" class="guest-btn">
-        Create Permanent Account
-      </button>
-    </div>
-
     <div class="notes-container">
       <!-- Loading Spinner for Group -->
       <div *ngIf="isLoadingGroup" class="loading-container">
