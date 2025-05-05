@@ -13,12 +13,12 @@ export const routes: Routes = [
   { 
     path: 'login', 
     component: LoginComponent,
-    canActivate: [noAuthGuard] // Add this
+    canActivate: [noAuthGuard] 
   },
   { 
     path: 'register', 
     component: RegisterComponent,
-    canActivate: [noAuthGuard] // Add this
+    canActivate: [noAuthGuard]
   },
   { path: "notes/archived", component: NotesListComponent, canActivate: [authGuard], data: { status: "archived" } },
   { path: "notes/trash", component: NotesListComponent, canActivate: [authGuard], data: { status: "trashed" } },
