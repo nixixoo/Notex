@@ -1,10 +1,12 @@
 import { Injectable, Inject, PLATFORM_ID } from "@angular/core"
 import { BehaviorSubject, Observable, of } from "rxjs"
-import { map, catchError, tap, retry, delay } from "rxjs/operators"
+import { map, catchError, tap, retry, delay, filter } from "rxjs/operators"
 import type { AuthResponse, LoginRequest, RegisterRequest, User } from "../models/user.model"
 import { Router } from "@angular/router"
 import { isPlatformBrowser } from '@angular/common'
 import { ApiService } from "./api.service"
+import { Store } from "@ngrx/store"
+import { selectUser, selectIsGuestMode, selectIsLoggedIn } from "../store/auth/auth.selectors"
 
 @Injectable({
   providedIn: "root",
@@ -20,14 +22,28 @@ export class AuthService {
   public user$ = this.userSubject.asObservable()
   private isBrowser: boolean
   private isValidatingToken = false;
+  private initializationComplete = false;
+  private initializationSubject = new BehaviorSubject<boolean>(false);
+  public initialization$ = this.initializationSubject.asObservable();
 
   constructor(
     @Inject(Router) private router: Router,
     @Inject(PLATFORM_ID) platformId: Object,
-    private apiService: ApiService
+    private apiService: ApiService,
+    private store: Store
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
     this.initializeAuthState();
+    
+    // Note: Temporarily disabling store sync to fix session persistence
+    // The store should be updated from the service, not the other way around
+    // this.store.select(selectUser).subscribe(user => {
+    //   this.userSubject.next(user);
+    // });
+    
+    // this.store.select(selectIsGuestMode).subscribe(isGuest => {
+    //   this.guestModeSubject.next(isGuest);
+    // });
   }
 
   private getUserFromStorage(): User | null {
@@ -37,7 +53,12 @@ export class AuthService {
   }
 
   private initializeAuthState(): void {
-    if (!this.isBrowser) return;
+    if (!this.isBrowser) {
+      this.initializationSubject.next(true);
+      return;
+    }
+    
+    console.log('Initializing auth state...');
     
     // Check for guest mode
     const isGuestMode = localStorage.getItem(this.GUEST_KEY) === 'true';
@@ -47,12 +68,46 @@ export class AuthService {
     const token = localStorage.getItem(this.TOKEN_KEY);
     const user = this.getUserFromStorage();
     
+    console.log('Auth initialization - Token exists:', !!token, 'User exists:', !!user);
+    
     if (token && user) {
       // Set the user from storage immediately to prevent flickering
       this.userSubject.next(user);
+      console.log('User loaded from storage:', user.username);
       
-      // Then validate token with backend
-      this.validateToken().subscribe();
+      // Complete initialization immediately for better UX
+      // The token will be validated silently in the background
+      this.initializationComplete = true;
+      this.initializationSubject.next(true);
+      
+      // Validate token with backend silently in the background
+      // If validation fails due to network issues, user stays logged in
+      this.validateToken().subscribe({
+        next: (isValid) => {
+          console.log('Background token validation result:', isValid);
+        },
+        error: (error) => {
+          console.warn('Background token validation error, but keeping user logged in:', error);
+        }
+      });
+    } else if (token && !user) {
+      // If we have a token but no user data, try to get user info
+      console.log('Found token but no user data, fetching user info...');
+      this.validateToken().subscribe({
+        next: () => {
+          this.initializationComplete = true;
+          this.initializationSubject.next(true);
+        },
+        error: () => {
+          this.initializationComplete = true;
+          this.initializationSubject.next(true);
+        }
+      });
+    } else {
+      // No token and no user - initialization complete
+      console.log('No token found, initialization complete');
+      this.initializationComplete = true;
+      this.initializationSubject.next(true);
     }
   }
 
@@ -68,8 +123,6 @@ export class AuthService {
     this.isValidatingToken = true;
     
     return this.apiService.get<User>('auth/me').pipe(
-      retry(2), // Retry up to 2 times
-      delay(500), // Add a small delay between retries
       tap(user => {
         this.userSubject.next(user);
         localStorage.setItem(this.USER_KEY, JSON.stringify(user));
@@ -77,36 +130,66 @@ export class AuthService {
       }),
       map(() => true),
       catchError(error => {
-        console.error('Token validation failed:', error);
-        // Only clear auth data if we get a 401 Unauthorized response
-        if (error.status === 401) {
-          this.clearAuthData();
-        }
         this.isValidatingToken = false;
-        return of(false);
+        
+        // Only clear auth data if we get a clear authentication error (401/403)
+        // Don't clear on network errors, server errors, etc.
+        if (error.status === 401 || error.status === 403) {
+          console.log('Token validation: Authentication expired, clearing session');
+          this.clearAuthData();
+          return of(false);
+        }
+        
+        // For other errors (network, server issues), keep the user logged in
+        // They can still use the app and try again later
+        console.log('Token validation: Network/server error, keeping session active');
+        return of(true); // Return true to keep user logged in
       })
     );
   }
 
   login(credentials: LoginRequest): Observable<AuthResponse> {
-    return this.apiService.post<AuthResponse>('auth/login', credentials).pipe(
-      tap(response => {
-        if (response.token) {
+    return this.apiService.post<any>('auth/login', credentials).pipe(
+      tap(apiResponse => {
+        console.log('Raw login API response:', apiResponse);
+        
+        // Handle wrapped API response format {success: true, data: {...}}
+        const response = apiResponse.data || apiResponse;
+        
+        console.log('Processed login response:', response);
+        
+        if (response.token && response.user) {
+          console.log('Saving login data:', {
+            token: !!response.token,
+            user: response.user
+          });
+          
           localStorage.setItem(this.TOKEN_KEY, response.token);
           localStorage.setItem(this.USER_KEY, JSON.stringify(response.user));
           this.userSubject.next(response.user);
           
+          console.log('After login - User set:', this.userSubject.value);
+          console.log('After login - Token in storage:', !!localStorage.getItem(this.TOKEN_KEY));
+          
           // Disable guest mode when logging in
           this.setGuestMode(false);
+        } else {
+          console.error('Invalid login response format:', response);
         }
-      })
+      }),
+      map(apiResponse => apiResponse.data || apiResponse)
     );
   }
 
   register(userData: RegisterRequest): Observable<AuthResponse> {
-    return this.apiService.post<AuthResponse>('auth/register', userData).pipe(
-      tap(response => {
-        if (response.token) {
+    return this.apiService.post<any>('auth/register', userData).pipe(
+      tap(apiResponse => {
+        console.log('Raw register API response:', apiResponse);
+        
+        // Handle wrapped API response format {success: true, data: {...}}
+        const response = apiResponse.data || apiResponse;
+        
+        if (response.token && response.user) {
           localStorage.setItem(this.TOKEN_KEY, response.token);
           localStorage.setItem(this.USER_KEY, JSON.stringify(response.user));
           this.userSubject.next(response.user);
@@ -114,7 +197,8 @@ export class AuthService {
           // Disable guest mode when registering
           this.setGuestMode(false);
         }
-      })
+      }),
+      map(apiResponse => apiResponse.data || apiResponse)
     );
   }
 
@@ -132,10 +216,22 @@ export class AuthService {
   }
 
   isLoggedIn(): boolean {
-    return !!this.userSubject.value;
+    // Check both in-memory state and localStorage for reliability
+    const memoryUser = this.userSubject.value;
+    const token = this.isBrowser ? localStorage.getItem(this.TOKEN_KEY) : null;
+    const result = !!(memoryUser && token);
+    
+    console.log('isLoggedIn check:', {
+      hasMemoryUser: !!memoryUser,
+      hasToken: !!token,
+      result: result
+    });
+    
+    return result;
   }
 
   isGuestMode(): boolean {
+    // Get from local subject (more reliable than store for session persistence)
     return this.guestModeSubject.value;
   }
 
@@ -183,5 +279,16 @@ export class AuthService {
 
   isAuthenticated(): boolean {
     return this.isLoggedIn();
+  }
+
+  waitForInitialization(): Observable<boolean> {
+    if (this.initializationComplete) {
+      return of(true);
+    }
+    
+    return this.initializationSubject.asObservable().pipe(
+      filter(complete => complete),
+      map(() => true)
+    );
   }
 }

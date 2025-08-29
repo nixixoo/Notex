@@ -11,7 +11,7 @@
   
   <!-- Desktop Navigation -->
   <nav class="nav desktop-nav">
-    <ng-container *ngIf="(authService.user$ | async) as user; else loginLinks">
+    <ng-container *ngIf="(user$ | async) as user; else loginLinks">
       <a routerLink="/notes" routerLinkActive="active" class="nav-link">My Notes</a>
       <button (click)="logout()" class="nav-link logout-btn">Logout</button>
     </ng-container>
@@ -41,7 +41,7 @@
       </div>
     </div>
     <nav class="mobile-nav">
-      <ng-container *ngIf="(authService.user$ | async) as user; else mobileLoginLinks">
+      <ng-container *ngIf="(user$ | async) as user; else mobileLoginLinks">
         <a routerLink="/notes" routerLinkActive="active" class="nav-link" (click)="toggleMobileMenu()">My Notes</a>
         <button (click)="logout(); toggleMobileMenu()" class="nav-link logout-btn">Logout</button>
       </ng-container>

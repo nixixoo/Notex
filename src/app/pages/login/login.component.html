@@ -53,12 +53,12 @@
         </div>
       </div>
       
-      <button type="submit" class="submit-btn" [disabled]="loginForm.invalid || isLoading">
-        {{ isLoading ? 'Signing in...' : 'Sign In' }}
+      <button type="submit" class="submit-btn" [disabled]="loginForm.invalid || (isLoading$ | async)">
+        {{ (isLoading$ | async) ? 'Signing in...' : 'Sign In' }}
       </button>
       
       <!-- Error message alert -->
-      <div *ngIf="errorMessage" class="error-alert" role="alert">
+      <div *ngIf="error$ | async as errorMessage" class="error-alert" role="alert">
         <div class="error-icon">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="10"></circle>

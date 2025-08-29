@@ -149,9 +149,6 @@ export class ChatSidebarComponent implements OnInit, OnChanges, OnDestroy, After
   lastMessageId: string = ''; // Track the last message ID for animation
   shouldScrollToBottom: boolean = false;
   
-  // Language selection
-  selectedLanguage: string = 'auto';
-  currentConversationLanguage: string = 'auto';
   
   // Temporary message display for better UX
   pendingUserMessage: ChatMessage | null = null;
@@ -167,10 +164,14 @@ export class ChatSidebarComponent implements OnInit, OnChanges, OnDestroy, After
   ngOnInit(): void {
     // Subscribe to the message loading state
     this.loadingSubscription = this.chatService.messagesLoading$.subscribe(loading => {
+      console.log('Messages loading state changed:', loading);
       this.messagesLoading = loading;
       if (!loading) {
-        this.loadMessages();
-        this.shouldScrollToBottom = true;
+        // Load messages when loading completes
+        setTimeout(() => {
+          this.loadMessages();
+          this.shouldScrollToBottom = true;
+        }, 50);
       }
     });
     
@@ -232,7 +233,10 @@ export class ChatSidebarComponent implements OnInit, OnChanges, OnDestroy, After
   
   private loadMessages(): void {
     // Load messages specific to this note
-    this.messages = this.chatService.getMessages(this.noteId);
+    const newMessages = this.chatService.getMessages(this.noteId);
+    console.log(`Loading messages for noteId ${this.noteId}:`, newMessages.length, 'messages');
+    
+    this.messages = newMessages;
     
     // Clear pending message if it's now in the loaded messages
     if (this.pendingUserMessage) {
@@ -242,12 +246,11 @@ export class ChatSidebarComponent implements OnInit, OnChanges, OnDestroy, After
       );
       
       if (messageExists) {
+        console.log('Clearing pending message as it now exists in loaded messages');
         this.pendingUserMessage = null;
       }
     }
     
-    // Get the conversation language from the note's metadata
-    this.currentConversationLanguage = this.chatService.getConversationLanguage(this.noteId) || 'auto';
     
     // Set the last message ID if there are messages
     if (this.messages.length > 0) {
@@ -309,24 +312,6 @@ export class ChatSidebarComponent implements OnInit, OnChanges, OnDestroy, After
     element.style.height = `${newHeight}px`;
   }
 
-  // Simple language detection
-  detectLanguage(text: string): string {
-    // Common Spanish words and patterns
-    const spanishPatterns = [
-      /\b(hola|gracias|buenos días|buenas tardes|buenas noches|cómo estás|qué tal|por favor)\b/i,
-      /\b(el|la|los|las|un|una|unos|unas)\b/i,
-      /\b(y|o|pero|porque|como|cuando|donde|si|no|que)\b/i,
-      /[áéíóúüñ¿¡]/i,
-      /\b(necesito|quiero|puedo|debo|tengo|estoy|soy|voy|hacer|decir|ver|dar|saber)\b/i,
-      /\b(mi|tu|su|nuestro|vuestro|este|ese|aquel)\b/i
-    ];
-    
-    // Check if the text matches Spanish patterns
-    const spanishMatches = spanishPatterns.filter(pattern => pattern.test(text)).length;
-    
-    // If multiple Spanish patterns are found, consider it Spanish
-    return spanishMatches >= 2 ? 'es' : 'en';
-  }
 
   sendMessage(): void {
     if (!this.message.trim()) return;
@@ -353,14 +338,6 @@ export class ChatSidebarComponent implements OnInit, OnChanges, OnDestroy, After
     // Set flag to scroll to bottom after view is updated
     this.shouldScrollToBottom = true;
     
-    // Detect language of the current message
-    const detectedLanguage = this.detectLanguage(userMessage);
-    
-    // Update conversation language if it's the first message or language changed
-    if (this.currentConversationLanguage === 'auto' || 
-        (this.messages.length > 0 && detectedLanguage !== this.currentConversationLanguage)) {
-      this.currentConversationLanguage = detectedLanguage;
-    }
     
     // If there's note content, add context to the message for the AI
     // but we'll send a special flag to the backend to indicate this is a contextualized message
@@ -377,28 +354,32 @@ My question: ${userMessage}`;
     // Clear input
     this.message = '';
     
-    // Send message to service with noteId, context flag, and conversation language
+    // Send message to service with noteId and context flag
     this.chatService.sendMessage(
       contextMessage, 
       this.noteId, 
       userMessage, 
-      hasNoteContext, 
-      this.currentConversationLanguage
+      hasNoteContext
     ).subscribe({
       next: () => {
-        // Save the conversation language for this note
-        this.chatService.setConversationLanguage(this.noteId, this.currentConversationLanguage);
+        // Clear the pending message as it should now be in the real messages
+        this.pendingUserMessage = null;
         
-        // Messages will be loaded from the API automatically
-        this.loadMessages();
+        // Messages will be loaded from the API automatically via the service
+        // But let's also trigger a manual load after a short delay to ensure we get the latest
+        setTimeout(() => {
+          this.loadMessages();
+          this.shouldScrollToBottom = true;
+        }, 200);
+        
         this.isLoading = false;
-        
-        // Scroll to bottom to show new message
-        this.shouldScrollToBottom = true;
       },
       error: (error) => {
         console.error('Error sending message:', error);
         this.isLoading = false;
+        
+        // Clear the pending message on error
+        this.pendingUserMessage = null;
         
         // Show error message to user
         alert('Error sending message. Please try again later.');
@@ -426,9 +407,6 @@ My question: ${userMessage}`;
           // User confirmed deletion
           // Clear pending message
           this.pendingUserMessage = null;
-          
-          // Reset conversation language
-          this.currentConversationLanguage = 'auto';
           
           // Clear chat for this specific note
           this.chatService.clearChat(this.noteId);

@@ -18,18 +18,20 @@ export interface ChatResponse {
 }
 
 export interface ChatHistoryResponse {
-  messages: {
-    id: string;
-    content: string;
-    isUser: boolean;
-    timestamp: string;
-    noteId: string;
-    userId: string;
-  }[];
+  success: boolean;
+  data: {
+    messages: {
+      id: string;
+      content: string;
+      isUser: boolean;
+      timestamp: string;
+      noteId: string;
+      userId: string;
+    }[];
+  };
 }
 
 const CHAT_STORAGE_KEY = 'notex_chat_messages';
-const CHAT_LANGUAGE_KEY = 'notex_chat_languages';
 
 @Injectable({
   providedIn: 'root'
@@ -38,8 +40,6 @@ export class ChatService {
   // Store messages by noteId
   private messagesByNoteId: { [noteId: string]: ChatMessage[] } = {};
   
-  // Store conversation language by noteId
-  private languageByNoteId: { [noteId: string]: string } = {};
   
   // Default messages for when no noteId is provided
   private defaultMessages: ChatMessage[] = [];
@@ -55,9 +55,6 @@ export class ChatService {
   ) {
     // Load messages from storage or API on service initialization
     this.loadMessages();
-    
-    // Load conversation languages
-    this.loadLanguages();
   }
 
   // Load messages from localStorage or API
@@ -75,42 +72,6 @@ export class ChatService {
     }
   }
 
-  // Load conversation languages from localStorage
-  private loadLanguages(): void {
-    const storedLanguages = localStorage.getItem(CHAT_LANGUAGE_KEY);
-    if (storedLanguages) {
-      try {
-        this.languageByNoteId = JSON.parse(storedLanguages);
-      } catch (error) {
-        console.error('Error loading chat languages from storage:', error);
-      }
-    }
-  }
-
-  // Save conversation languages to localStorage
-  private saveLanguages(): void {
-    try {
-      localStorage.setItem(CHAT_LANGUAGE_KEY, JSON.stringify(this.languageByNoteId));
-    } catch (error) {
-      console.error('Error saving chat languages to storage:', error);
-    }
-  }
-
-  // Get the conversation language for a specific note
-  getConversationLanguage(noteId?: string): string {
-    if (!noteId) {
-      return 'auto';
-    }
-    return this.languageByNoteId[noteId] || 'auto';
-  }
-
-  // Set the conversation language for a specific note
-  setConversationLanguage(noteId: string, language: string): void {
-    if (!noteId) return;
-    
-    this.languageByNoteId[noteId] = language;
-    this.saveLanguages();
-  }
 
   // Load messages from API for authenticated users
   private loadMessagesFromApi(): void {
@@ -124,12 +85,12 @@ export class ChatService {
         })
       )
       .subscribe(response => {
-        if (response) {
+        if (response && response.data && response.data.messages) {
           // Clear existing messages
           this.messagesByNoteId = {};
           
           // Group messages by noteId
-          response.messages.forEach(msg => {
+          response.data.messages.forEach(msg => {
             const noteId = msg.noteId || 'default';
             
             if (!this.messagesByNoteId[noteId]) {
@@ -144,6 +105,9 @@ export class ChatService {
               noteId: msg.noteId
             });
           });
+          console.log('Loaded messages from API:', Object.keys(this.messagesByNoteId).length, 'notes with messages');
+        } else {
+          console.warn('API response missing data.messages array:', response);
         }
         
         this.messagesLoaded = true;
@@ -234,25 +198,29 @@ export class ChatService {
     content: string, 
     noteId?: string, 
     originalMessage?: string, 
-    hasNoteContext?: boolean,
-    language: string = 'auto'
+    hasNoteContext?: boolean
   ): Observable<ChatResponse> {
     // We no longer add the user message here, as it will be saved by the backend
     // and retrieved when the API response comes back
     
     // Send to API and get response
-    return this.apiService.post<ChatResponse>('chat/message', { 
+    const payload = { 
       message: content,
       noteId: noteId,
       originalMessage: originalMessage,
-      hasNoteContext: hasNoteContext,
-      language: language
-    }).pipe(
-      tap(() => {
-        // After sending a message, reload messages from the API to get both
+      hasNoteContext: hasNoteContext
+    };
+    
+    return this.apiService.post<ChatResponse>('chat/message', payload).pipe(
+      tap((response) => {
+        // After receiving a successful response, reload messages from the API to get both
         // the user message and AI response that were saved by the backend
         if (this.authService.isAuthenticated()) {
-          this.loadMessagesFromApi();
+          // Set loading state to trigger component refresh
+          this.messagesLoadingSubject.next(true);
+          setTimeout(() => {
+            this.loadMessagesFromApi();
+          }, 100); // Small delay to ensure backend has processed the response
         }
       })
     );
@@ -304,12 +272,6 @@ export class ChatService {
       this.defaultMessages = [];
     } else {
       this.messagesByNoteId[noteId] = [];
-      
-      // Also clear the language setting for this note
-      if (this.languageByNoteId[noteId]) {
-        delete this.languageByNoteId[noteId];
-        this.saveLanguages();
-      }
     }
     
     // Save to localStorage for guest users

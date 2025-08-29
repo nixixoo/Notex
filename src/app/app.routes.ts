@@ -5,7 +5,7 @@ import { NotesListComponent } from "./pages/notes-list/notes-list.component"
 import { NoteEditorComponent } from "./pages/note-editor/note-editor.component"
 import { GroupsListComponent } from "./pages/groups-list/groups-list.component"
 import { GroupDetailComponent } from "./pages/group-detail/group-detail.component"
-import { authGuard } from "./guards/auth.guard"
+import { initGuard } from "./guards/init.guard"
 import { noAuthGuard } from "./guards/no-auth.guard"
 
 export const routes: Routes = [
@@ -20,27 +20,27 @@ export const routes: Routes = [
     component: RegisterComponent,
     canActivate: [noAuthGuard]
   },
-  { path: "notes/archived", component: NotesListComponent, canActivate: [authGuard], data: { status: "archived" } },
-  { path: "notes/trash", component: NotesListComponent, canActivate: [authGuard], data: { status: "trashed" } },
+  { path: "notes/archived", component: NotesListComponent, canActivate: [initGuard], data: { status: "archived" } },
+  { path: "notes/trash", component: NotesListComponent, canActivate: [initGuard], data: { status: "trashed" } },
   { 
     path: 'notes', 
     component: NotesListComponent,
-    canActivate: [authGuard] 
+    canActivate: [initGuard] 
   },
   { 
     path: 'notes/:id', 
     component: NoteEditorComponent,
-    canActivate: [authGuard] 
+    canActivate: [initGuard] 
   },
   { 
     path: 'groups', 
     component: GroupsListComponent,
-    canActivate: [authGuard] 
+    canActivate: [initGuard] 
   },
   { 
     path: 'groups/:id', 
     component: GroupDetailComponent,
-    canActivate: [authGuard] 
+    canActivate: [initGuard] 
   },
   { path: "**", redirectTo: "/notes" },
 ]

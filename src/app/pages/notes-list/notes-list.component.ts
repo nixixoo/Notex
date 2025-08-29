@@ -9,7 +9,10 @@ import type { Note } from "../../models/note.model"
 import { animate, query, stagger, style, transition, trigger } from "@angular/animations"
 import { FormsModule } from "@angular/forms"
 import { PreviewFormatPipe } from "../../pipes/preview-format.pipe"
-import { AuthService } from "../../services/auth.service"
+import { Store } from "@ngrx/store"
+import { Observable } from "rxjs"
+import { selectIsGuestMode } from "../../store/auth/auth.selectors"
+import { AuthActions } from "../../store/auth/auth.actions"
 import { Router } from "@angular/router"
 import { SidebarComponent } from "../../components/sidebar/sidebar.component"
 import { NoteMenuComponent } from "../../components/note-menu/note-menu.component"
@@ -111,6 +114,7 @@ export class NotesListComponent implements OnInit {
   titleLengthDanger = false
   subtitleLengthWarning = false
   subtitleLengthDanger = false
+  isGuestMode$: Observable<boolean>
   
   // Color options for notes
   colorOptions = [
@@ -129,13 +133,15 @@ export class NotesListComponent implements OnInit {
   constructor(
     @Inject(NotesService) private notesService: NotesService,
     @Inject(FormBuilder) private fb: FormBuilder,
-    @Inject(AuthService) public authService: AuthService,
+    private store: Store,
     @Inject(Router) public router: Router,
     @Inject(ActivatedRoute) private route: ActivatedRoute,
     public sidebarService: SidebarService,
     @Inject(GroupsService) private groupsService: GroupsService,
     private dialog: MatDialog
   ) {
+    this.isGuestMode$ = this.store.select(selectIsGuestMode);
+    
     this.newNoteForm = this.fb.group({
       title: ['', [
         Validators.required,
@@ -191,7 +197,7 @@ export class NotesListComponent implements OnInit {
 
   convertToPermanentAccount(): void {
     // Clear guest data but keep notes temporarily
-    this.authService.logout()
+    this.store.dispatch(AuthActions.exitGuestMode());
 
     // Navigate to register with preserved notes
     this.router.navigate(["/register"], {

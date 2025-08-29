@@ -2,9 +2,10 @@ import { Component, Inject } from "@angular/core"
 import { CommonModule } from "@angular/common"
 import { FormBuilder, type FormGroup, ReactiveFormsModule, Validators } from "@angular/forms"
 import { Router, RouterLink } from "@angular/router"
-import { AuthService } from "../../services/auth.service"
 import { animate, style, transition, trigger } from "@angular/animations"
-import { User } from "../../models/user.model"; // Add this import
+import { User } from "../../models/user.model"
+import { Observable, BehaviorSubject } from "rxjs"
+import { AuthService } from "../../services/auth.service"
 
 
 @Component({
@@ -24,13 +25,15 @@ import { User } from "../../models/user.model"; // Add this import
 })
 export class LoginComponent {
   loginForm: FormGroup
-  isLoading = false;
-  errorMessage: string | null = null;
-  hidePassword = true; // For password visibility toggle
+  private isLoadingSubject = new BehaviorSubject<boolean>(false);
+  isLoading$ = this.isLoadingSubject.asObservable();
+  private errorSubject = new BehaviorSubject<string | null>(null);
+  error$ = this.errorSubject.asObservable();
+  hidePassword = true;
 
   constructor(
     @Inject(FormBuilder) private fb: FormBuilder,
-    @Inject(AuthService) private authService: AuthService,
+    private authService: AuthService,
     @Inject(Router) private router: Router
   ) {
     this.loginForm = this.fb.group({
@@ -47,58 +50,32 @@ export class LoginComponent {
   }
 
   onSubmit(): void {
-    if (this.loginForm.invalid) return
+    if (this.loginForm.invalid) return;
 
-    this.errorMessage = null;
-    this.isLoading = true
+    this.isLoadingSubject.next(true);
+    this.errorSubject.next(null);
 
     this.authService.login(this.loginForm.value).subscribe({
       next: (response) => {
-        this.isLoading = false
-        this.authService.setSession(response)
-        this.router.navigate(["/notes"])
+        console.log('Login successful:', response);
+        this.isLoadingSubject.next(false);
+        
+        // Small delay to ensure state is fully updated before navigation
+        setTimeout(() => {
+          console.log('Navigating to /notes after successful login');
+          this.router.navigate(['/notes']);
+        }, 100);
       },
       error: (error) => {
-        this.isLoading = false
-        console.error("Login error:", error)
-        
-        // Handle network errors
-        if (error instanceof ErrorEvent) {
-          this.errorMessage = 'A network error occurred. Please check your connection.';
-        }
-        // Handle specific authentication errors
-        else if (error.status === 401) {
-          this.errorMessage = 'Invalid username or password. Please try again.';
-        }
-        else if (error.status === 404) {
-          this.errorMessage = 'User not found. Please check your username.';
-        }
-        else if (error.status === 429) {
-          this.errorMessage = 'Too many login attempts. Please try again later.';
-        }
-        // Handle server-side errors
-        else {
-          // Extract message from different possible locations
-          this.errorMessage = error.error?.message ||  // If exists in error.error.message
-                             error.error ||           // If error.error is the message string
-                             error.message ||         // If message in error.message
-                             'An unexpected error occurred. Please try again later.';
-        }
-      },
-    })
+        console.error('Login failed:', error);
+        this.isLoadingSubject.next(false);
+        this.errorSubject.next(error.message || 'Login failed. Please try again.');
+      }
+    });
   }
 
   enterGuestMode(): void {
-    
-    // First logout to clear any existing auth state
-    this.authService.logout();
-    
-    // Then enable guest mode
     this.authService.enableGuestMode();
-    
-    // Add a small delay before navigation to ensure state is updated
-    setTimeout(() => {
-      this.router.navigate(['/notes']);
-    }, 100);
+    this.router.navigate(['/notes']);
   }
 }

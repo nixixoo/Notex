@@ -35,7 +35,7 @@ export class NoteMenuComponent implements OnDestroy{
 
   constructor(private menuState: MenuStateService) {
     this.menuSub = this.menuState.activeMenuId$.subscribe(activeId => {
-      if (activeId !== this.note.id) {
+      if (this.note && activeId !== this.note.id) {
         this.isOpen = false;
       }
     });
@@ -44,7 +44,7 @@ export class NoteMenuComponent implements OnDestroy{
   isOpen = false
 
   get menuButtonStyle() {
-    if (this.note.color) {
+    if (this.note?.color) {
       return {
         '--hover-bg-color': 'rgba(0, 0, 0, 0.3)'
       };
@@ -54,7 +54,7 @@ export class NoteMenuComponent implements OnDestroy{
 
   toggleMenu(event: Event): void {
     event.stopPropagation();
-    if (!this.isOpen) {
+    if (!this.isOpen && this.note?.id) {
       this.menuState.setActiveMenu(this.note.id);
     }
     this.isOpen = !this.isOpen;

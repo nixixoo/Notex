@@ -1,10 +1,13 @@
 import { Component, Inject, PLATFORM_ID } from "@angular/core"
 import { CommonModule, isPlatformBrowser } from "@angular/common"
 import { RouterLink, RouterLinkActive } from "@angular/router"
-import { AuthService } from "../../services/auth.service"
 import { animate, style, transition, trigger } from "@angular/animations"
 import { FormsModule } from "@angular/forms"
 import { MatIconModule } from "@angular/material/icon"
+import { Observable } from "rxjs"
+import { map } from "rxjs/operators"
+import { User } from "../../models/user.model"
+import { AuthService } from "../../services/auth.service"
 
 @Component({
   selector: "app-header",
@@ -24,18 +27,25 @@ import { MatIconModule } from "@angular/material/icon"
 export class HeaderComponent {
   isDarkMode: boolean | undefined;
   isMobileMenuOpen: boolean = false;
+  user$: Observable<User | null>;
+  isAuthenticated$: Observable<boolean>;
 
   constructor(
-    @Inject(AuthService) public authService: AuthService,
+    private authService: AuthService,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {
+    this.user$ = this.authService.user$;
+    this.isAuthenticated$ = this.authService.user$.pipe(
+      map(user => !!user)
+    );
+    
     if (isPlatformBrowser(this.platformId)) {
       this.isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
     }
   }
 
   logout(): void {
-    this.authService.logout()
+    this.authService.logout();
   }
 
   toggleMobileMenu(): void {
