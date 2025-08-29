@@ -16,9 +16,21 @@
   background-color: var(--primary-purple);
   color: var(--background-color);
   
-  h2 {
-    margin: 0;
-    font-size: 1.2rem;
+  .header-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    
+    h2 {
+      margin: 0;
+      font-size: 1.2rem;
+    }
+    
+    .guest-indicator {
+      font-size: 0.8rem;
+      color: rgba(255, 255, 255, 0.8);
+      font-weight: 500;
+    }
   }
 }
 

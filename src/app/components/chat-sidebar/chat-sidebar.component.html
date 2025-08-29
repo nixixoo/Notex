@@ -25,13 +25,13 @@
       </div>
       
       <!-- Empty chat message -->
-      <div *ngIf="!messagesLoading && allMessages.length === 0" class="empty-chat">
+      <div *ngIf="!messagesLoading && messages.length === 0" class="empty-chat">
         <p>Ask me about your note</p>
       </div>
       
       <!-- Chat messages -->
       <div class="messages-list" [@simpleFade]="fadeState">
-        <div *ngFor="let msg of allMessages" class="message" 
+        <div *ngFor="let msg of messages" class="message" 
              [ngClass]="{'user-message': msg.isUser, 'ai-message': !msg.isUser, 'new-message': isNewMessage(msg)}"
              [@newMessageFade]="isNewMessage(msg) ? 'in' : 'none'">
           <div class="message-content">

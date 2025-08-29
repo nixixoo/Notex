@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable, tap, catchError, of, throwError, Subject, BehaviorSubject } from 'rxjs';
+import { Observable, tap, catchError, of, throwError, Subject, BehaviorSubject, map } from 'rxjs';
 import { ApiService } from './api.service';
 import { AuthService } from './auth.service';
 
@@ -190,7 +190,6 @@ export class ChatService {
    * @param noteId The ID of the note associated with the message (optional).
    * @param originalMessage The original user message without note context (optional).
    * @param hasNoteContext Flag indicating if the message includes note context (optional).
-   * @param language The language to use for the response (auto, en, es) (optional).
    * 
    * @returns An observable of the chat response from the API.
    */
@@ -200,10 +199,30 @@ export class ChatService {
     originalMessage?: string, 
     hasNoteContext?: boolean
   ): Observable<ChatResponse> {
-    // We no longer add the user message here, as it will be saved by the backend
-    // and retrieved when the API response comes back
+    // Determine what message to display to the user
+    // If we have context, show the original message, otherwise show the content
+    const displayMessage = (hasNoteContext && originalMessage) ? originalMessage : content;
     
-    // Send to API and get response
+    // Add user message immediately to chat history for both authenticated and guest users
+    this.addMessage(displayMessage, true, new Date(), noteId);
+    
+    // Choose endpoint based on authentication status
+    if (this.authService.isAuthenticated()) {
+      return this.sendAuthenticatedMessage(content, noteId, originalMessage, hasNoteContext);
+    } else {
+      return this.sendGuestMessage(content, noteId, originalMessage, hasNoteContext);
+    }
+  }
+
+  /**
+   * Send message for authenticated users (with database storage)
+   */
+  private sendAuthenticatedMessage(
+    content: string, 
+    noteId?: string, 
+    originalMessage?: string, 
+    hasNoteContext?: boolean
+  ): Observable<ChatResponse> {
     const payload = { 
       message: content,
       noteId: noteId,
@@ -215,13 +234,39 @@ export class ChatService {
       tap((response) => {
         // After receiving a successful response, reload messages from the API to get both
         // the user message and AI response that were saved by the backend
-        if (this.authService.isAuthenticated()) {
-          // Set loading state to trigger component refresh
-          this.messagesLoadingSubject.next(true);
-          setTimeout(() => {
-            this.loadMessagesFromApi();
-          }, 100); // Small delay to ensure backend has processed the response
-        }
+        this.messagesLoadingSubject.next(true);
+        setTimeout(() => {
+          this.loadMessagesFromApi();
+        }, 100); // Small delay to ensure backend has processed the response
+      })
+    );
+  }
+
+  /**
+   * Send message for guest users (localStorage only)
+   */
+  private sendGuestMessage(
+    content: string, 
+    noteId?: string, 
+    originalMessage?: string, 
+    hasNoteContext?: boolean
+  ): Observable<ChatResponse> {
+    const payload = { 
+      message: content,
+      noteId: noteId,
+      originalMessage: originalMessage,
+      hasNoteContext: hasNoteContext
+    };
+    
+    return this.apiService.post<any>('guest-chat/message', payload).pipe(
+      map(response => ({
+        message: response.data.message,
+        userId: 'guest',
+        timestamp: response.data.timestamp
+      })),
+      tap((response) => {
+        // Add AI response to local storage
+        this.addMessage(response.message, false, new Date(response.timestamp), noteId);
       })
     );
   }

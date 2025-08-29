@@ -150,8 +150,6 @@ export class ChatSidebarComponent implements OnInit, OnChanges, OnDestroy, After
   shouldScrollToBottom: boolean = false;
   
   
-  // Temporary message display for better UX
-  pendingUserMessage: ChatMessage | null = null;
   
   private loadingSubscription: Subscription | null = null;
   private checkMessagesInterval: any = null;
@@ -238,18 +236,6 @@ export class ChatSidebarComponent implements OnInit, OnChanges, OnDestroy, After
     
     this.messages = newMessages;
     
-    // Clear pending message if it's now in the loaded messages
-    if (this.pendingUserMessage) {
-      const messageExists = this.messages.some(msg => 
-        msg.isUser && 
-        msg.content === this.pendingUserMessage?.content
-      );
-      
-      if (messageExists) {
-        console.log('Clearing pending message as it now exists in loaded messages');
-        this.pendingUserMessage = null;
-      }
-    }
     
     
     // Set the last message ID if there are messages
@@ -271,13 +257,6 @@ export class ChatSidebarComponent implements OnInit, OnChanges, OnDestroy, After
     return msgId === this.lastMessageId && !this.isDeleting;
   }
 
-  // Get all messages including any pending message
-  get allMessages(): ChatMessage[] {
-    if (this.pendingUserMessage) {
-      return [...this.messages, this.pendingUserMessage];
-    }
-    return this.messages;
-  }
 
   toggle(): void {
     this.isOpen = !this.isOpen;
@@ -321,20 +300,6 @@ export class ChatSidebarComponent implements OnInit, OnChanges, OnDestroy, After
     // Store the message before sending
     const userMessage = this.message;
     
-    // Create a temporary message to display immediately
-    this.pendingUserMessage = {
-      content: userMessage,
-      isUser: true,
-      timestamp: new Date(),
-      noteId: this.noteId
-    };
-    
-    // Set this as the last message ID for animation
-    this.lastMessageId = this.getMessageId(this.pendingUserMessage);
-    
-    // Reset fade state to ensure animation works for new messages
-    this.fadeState = 'in';
-    
     // Set flag to scroll to bottom after view is updated
     this.shouldScrollToBottom = true;
     
@@ -362,9 +327,6 @@ My question: ${userMessage}`;
       hasNoteContext
     ).subscribe({
       next: () => {
-        // Clear the pending message as it should now be in the real messages
-        this.pendingUserMessage = null;
-        
         // Messages will be loaded from the API automatically via the service
         // But let's also trigger a manual load after a short delay to ensure we get the latest
         setTimeout(() => {
@@ -377,9 +339,6 @@ My question: ${userMessage}`;
       error: (error) => {
         console.error('Error sending message:', error);
         this.isLoading = false;
-        
-        // Clear the pending message on error
-        this.pendingUserMessage = null;
         
         // Show error message to user
         alert('Error sending message. Please try again later.');
@@ -405,9 +364,6 @@ My question: ${userMessage}`;
         // Wait for animation to complete before actually clearing
         setTimeout(() => {
           // User confirmed deletion
-          // Clear pending message
-          this.pendingUserMessage = null;
-          
           // Clear chat for this specific note
           this.chatService.clearChat(this.noteId);
           
