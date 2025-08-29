@@ -51,49 +51,69 @@ export class RegisterComponent {
     this.isLoading = true;
     this.errorMessage = '';
 
-    // Use retry with backoff strategy for Vercel cold starts
+    // Use retry with backoff strategy for network issues  
     this.authService.register(this.registerForm.value)
       .pipe(
         // Retry up to 2 times with a 1-second delay between attempts
         retry({
           count: 2,
           delay: (error, retryCount) => {
-            return timer(1000); // 1 second delay
+            // Don't retry on client errors (400-499) except for 408 (timeout)
+            if (error.status >= 400 && error.status < 500 && error.status !== 408) {
+              return throwError(() => error);
+            }
+            return timer(1000); // 1 second delay for network/server errors
           }
         }),
         catchError(error => {
           console.error("Registration error after retries:", error);
           this.isLoading = false;
           
-          // Handle specific error cases
+          // Handle specific error cases with clearer messages
+          let errorMessage: string;
+          
           if (error instanceof ErrorEvent) {
-            this.errorMessage = 'A network error occurred. Please check your connection.';
-          } else if (error.status === 409) {
-            this.errorMessage = 'Username already exists. Please choose a different username.';
+            errorMessage = 'A network error occurred. Please check your connection and try again.';
+          } else if (error.status === 409 || error.status === 422) {
+            errorMessage = 'This username is already taken. Please choose a different username.';
           } else if (error.status === 400) {
-            this.errorMessage = 'Invalid registration data. Please check your information.';
+            // Try to get specific validation message from server
+            errorMessage = error.error?.message || 
+                          'Invalid registration data. Please ensure your password is at least 6 characters.';
           } else if (error.status === 429) {
-            this.errorMessage = 'Too many registration attempts. Please try again later.';
+            errorMessage = 'Too many registration attempts. Please wait a moment and try again.';
+          } else if (error.status === 500) {
+            errorMessage = 'Server error occurred. Please try again later.';
+          } else if (error.status === 0) {
+            errorMessage = 'Unable to connect to server. Please check your internet connection.';
           } else {
-            // Extract message from different possible locations
-            this.errorMessage = error.error?.message || 
-                               error.error || 
-                               error.message || 
-                               'Registration failed. Please try again later.';
+            // Extract message from different possible error response formats
+            errorMessage = error.error?.message || 
+                          error.error?.data?.message ||
+                          error.error || 
+                          error.message || 
+                          'Registration failed. Please try again later.';
           }
           
+          this.errorMessage = errorMessage;
           return throwError(() => error);
         })
       )
       .subscribe({
         next: (response) => {
+          console.log('Registration successful:', response);
           this.isLoading = false;
           this.authService.setSession(response);
-          this.router.navigate(["/notes"]);
+          
+          // Small delay to ensure state is fully updated before navigation
+          setTimeout(() => {
+            console.log('Navigating to /notes after successful registration');
+            this.router.navigate(["/notes"]);
+          }, 100);
         },
         error: (error) => {
           // Error is already handled in the catchError operator
-          console.error("Registration error:", error);
+          console.error("Final registration error:", error);
         },
       });
   }

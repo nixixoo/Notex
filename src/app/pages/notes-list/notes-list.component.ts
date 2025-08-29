@@ -13,6 +13,7 @@ import { Store } from "@ngrx/store"
 import { Observable } from "rxjs"
 import { selectIsGuestMode } from "../../store/auth/auth.selectors"
 import { AuthActions } from "../../store/auth/auth.actions"
+import { AuthService } from "../../services/auth.service"
 import { Router } from "@angular/router"
 import { SidebarComponent } from "../../components/sidebar/sidebar.component"
 import { NoteMenuComponent } from "../../components/note-menu/note-menu.component"
@@ -138,9 +139,10 @@ export class NotesListComponent implements OnInit {
     @Inject(ActivatedRoute) private route: ActivatedRoute,
     public sidebarService: SidebarService,
     @Inject(GroupsService) private groupsService: GroupsService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private authService: AuthService
   ) {
-    this.isGuestMode$ = this.store.select(selectIsGuestMode);
+    this.isGuestMode$ = this.authService.guestMode$;
     
     this.newNoteForm = this.fb.group({
       title: ['', [
