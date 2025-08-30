@@ -39,7 +39,7 @@
               <span class="message-sender">{{ msg.isUser ? 'You' : 'AI Assistant' }}</span>
               <span class="message-time">{{ msg.timestamp | date:'short' }}</span>
             </div>
-            <div class="message-text">{{ msg.content }}</div>
+            <div class="message-text" [innerHTML]="renderMarkdown(msg.content)"></div>
           </div>
         </div>
       </div>

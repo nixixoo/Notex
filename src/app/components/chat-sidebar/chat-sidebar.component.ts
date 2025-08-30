@@ -368,4 +368,28 @@ My question: ${userMessage}`;
       }
     });
   }
+
+  // Render basic markdown for chat messages
+  renderMarkdown(content: string): string {
+    if (!content) return '';
+    
+    // Escape HTML to prevent XSS attacks
+    let escaped = content
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;');
+    
+    // Convert **text** to <strong>text</strong>
+    escaped = escaped.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    
+    // Convert *text* to <em>text</em>
+    escaped = escaped.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    
+    // Convert line breaks to <br>
+    escaped = escaped.replace(/\n/g, '<br>');
+    
+    return escaped;
+  }
 }
