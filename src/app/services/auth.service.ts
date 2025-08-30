@@ -5,8 +5,6 @@ import type { AuthResponse, LoginRequest, RegisterRequest, User } from "../model
 import { Router } from "@angular/router"
 import { isPlatformBrowser } from '@angular/common'
 import { ApiService } from "./api.service"
-import { Store } from "@ngrx/store"
-import { selectUser, selectIsGuestMode, selectIsLoggedIn } from "../store/auth/auth.selectors"
 
 @Injectable({
   providedIn: "root",
@@ -29,21 +27,10 @@ export class AuthService {
   constructor(
     @Inject(Router) private router: Router,
     @Inject(PLATFORM_ID) platformId: Object,
-    private apiService: ApiService,
-    private store: Store
+    private apiService: ApiService
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
     this.initializeAuthState();
-    
-    // Note: Temporarily disabling store sync to fix session persistence
-    // The store should be updated from the service, not the other way around
-    // this.store.select(selectUser).subscribe(user => {
-    //   this.userSubject.next(user);
-    // });
-    
-    // this.store.select(selectIsGuestMode).subscribe(isGuest => {
-    //   this.guestModeSubject.next(isGuest);
-    // });
   }
 
   private getUserFromStorage(): User | null {

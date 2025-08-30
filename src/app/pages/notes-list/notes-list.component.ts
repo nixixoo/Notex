@@ -9,10 +9,7 @@ import type { Note } from "../../models/note.model"
 import { animate, query, stagger, style, transition, trigger } from "@angular/animations"
 import { FormsModule } from "@angular/forms"
 import { PreviewFormatPipe } from "../../pipes/preview-format.pipe"
-import { Store } from "@ngrx/store"
 import { Observable } from "rxjs"
-import { selectIsGuestMode } from "../../store/auth/auth.selectors"
-import { AuthActions } from "../../store/auth/auth.actions"
 import { AuthService } from "../../services/auth.service"
 import { Router } from "@angular/router"
 import { SidebarComponent } from "../../components/sidebar/sidebar.component"
@@ -134,7 +131,6 @@ export class NotesListComponent implements OnInit {
   constructor(
     @Inject(NotesService) private notesService: NotesService,
     @Inject(FormBuilder) private fb: FormBuilder,
-    private store: Store,
     @Inject(Router) public router: Router,
     @Inject(ActivatedRoute) private route: ActivatedRoute,
     public sidebarService: SidebarService,
@@ -198,9 +194,6 @@ export class NotesListComponent implements OnInit {
   }
 
   convertToPermanentAccount(): void {
-    // Clear guest data but keep notes temporarily
-    this.store.dispatch(AuthActions.exitGuestMode());
-
     // Navigate to register with preserved notes
     this.router.navigate(["/register"], {
       state: {
