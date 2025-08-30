@@ -325,12 +325,7 @@ My question: ${userMessage}`;
     ).subscribe({
       next: () => {
         // Messages will be loaded from the API automatically via the service
-        // But let's also trigger a manual load after a short delay to ensure we get the latest
-        setTimeout(() => {
-          this.loadMessages();
-          this.shouldScrollToBottom = true;
-        }, 200);
-        
+        this.shouldScrollToBottom = true;
         this.isLoading = false;
       },
       error: (error) => {

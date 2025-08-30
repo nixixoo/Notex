@@ -176,6 +176,26 @@
     /* Optional: add a subtle highlight for new messages */
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
+  
+  &.sending-message {
+    /* Style for temporary messages being sent */
+    opacity: 0.7;
+    position: relative;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      right: 8px;
+      transform: translateY(-50%);
+      width: 12px;
+      height: 12px;
+      border: 2px solid transparent;
+      border-top: 2px solid var(--background-color);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+  }
 }
 
 .message-header {
@@ -407,4 +427,9 @@
   height: 100%;
   color: var(--text-color-light);
   font-style: italic;
+}
+
+@keyframes spin {
+  0% { transform: translateY(-50%) rotate(0deg); }
+  100% { transform: translateY(-50%) rotate(360deg); }
 }

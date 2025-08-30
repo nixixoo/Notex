@@ -9,6 +9,7 @@ export interface ChatMessage {
   timestamp: Date;
   noteId?: string;
   id?: string;
+  isTemporary?: boolean; // Flag para mensajes temporales
 }
 
 export interface ChatResponse {
@@ -85,7 +86,13 @@ export class ChatService {
       )
       .subscribe(response => {
         if (response && response.data && response.data.messages) {
-          // Clear existing messages
+          // Remove all temporary messages before loading from API
+          Object.keys(this.messagesByNoteId).forEach(noteId => {
+            this.removeTemporaryMessages(noteId);
+          });
+          this.removeTemporaryMessages(); // For default messages
+          
+          // Clear existing non-temporary messages
           this.messagesByNoteId = {};
           
           // Group messages by noteId
@@ -198,13 +205,14 @@ export class ChatService {
     // If we have context, show the original message, otherwise show the content
     const displayMessage = (hasNoteContext && originalMessage) ? originalMessage : content;
     
-    // Add user message immediately to chat history for both authenticated and guest users
-    this.addMessage(displayMessage, true, new Date(), noteId);
-    
     // Choose endpoint based on authentication status
     if (this.authService.isAuthenticated()) {
+      // For authenticated users, add temporary message for immediate feedback
+      this.addTemporaryMessage(displayMessage, noteId);
       return this.sendAuthenticatedMessage(content, noteId, originalMessage, hasNoteContext);
     } else {
+      // For guest users, add message immediately to local storage
+      this.addMessage(displayMessage, true, new Date(), noteId);
       return this.sendGuestMessage(content, noteId, originalMessage, hasNoteContext);
     }
   }
@@ -264,6 +272,40 @@ export class ChatService {
         this.addMessage(response.message, false, new Date(response.timestamp), noteId);
       })
     );
+  }
+
+  // Add a temporary message for immediate UI feedback
+  private addTemporaryMessage(content: string, noteId?: string): void {
+    const message: ChatMessage = {
+      content,
+      isUser: true,
+      timestamp: new Date(),
+      noteId,
+      isTemporary: true
+    };
+    
+    // Add to local cache only (not localStorage or database)
+    if (!noteId) {
+      this.defaultMessages.push(message);
+    } else {
+      // Initialize messages array for this note if it doesn't exist
+      if (!this.messagesByNoteId[noteId]) {
+        this.messagesByNoteId[noteId] = [];
+      }
+      
+      this.messagesByNoteId[noteId].push(message);
+    }
+  }
+
+  // Remove temporary messages from cache
+  private removeTemporaryMessages(noteId?: string): void {
+    if (!noteId) {
+      this.defaultMessages = this.defaultMessages.filter(msg => !msg.isTemporary);
+    } else {
+      if (this.messagesByNoteId[noteId]) {
+        this.messagesByNoteId[noteId] = this.messagesByNoteId[noteId].filter(msg => !msg.isTemporary);
+      }
+    }
   }
 
   // Add a message to the chat history
