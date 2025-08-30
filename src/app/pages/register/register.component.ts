@@ -66,7 +66,6 @@ export class RegisterComponent {
           }
         }),
         catchError(error => {
-          console.error("Registration error after retries:", error);
           this.isLoading = false;
           
           // Handle specific error cases with clearer messages
@@ -101,19 +100,16 @@ export class RegisterComponent {
       )
       .subscribe({
         next: (response) => {
-          console.log('Registration successful:', response);
           this.isLoading = false;
           this.authService.setSession(response);
           
           // Small delay to ensure state is fully updated before navigation
           setTimeout(() => {
-            console.log('Navigating to /notes after successful registration');
             this.router.navigate(["/notes"]);
           }, 100);
         },
         error: (error) => {
           // Error is already handled in the catchError operator
-          console.error("Final registration error:", error);
         },
       });
   }

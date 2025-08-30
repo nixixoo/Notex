@@ -28,7 +28,6 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 
         // Exponential backoff
         const delay = Math.pow(2, retryCount) * 1000;
-        console.warn(`Request failed, retrying in ${delay}ms (attempt ${retryCount + 1})`);
         return timer(delay);
       }
     }),
@@ -39,16 +38,6 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 
       let errorMessage = 'An unexpected error occurred';
       let shouldShowNotification = true;
-
-      // Debug logging for all 401 errors
-      if (error.status === 401) {
-        console.log('401 Error intercepted:', {
-          url: error.url,
-          fullUrl: req.url,
-          method: req.method,
-          error: error
-        });
-      }
 
       // Handle different error types
       switch (error.status) {
@@ -125,14 +114,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
       }
 
       // Log detailed error for debugging
-      console.error('HTTP Error:', {
-        url: error.url,
-        status: error.status,
-        statusText: error.statusText,
-        message: errorMessage,
-        error: error.error,
-        timestamp: new Date().toISOString()
-      });
+
 
       // Show user-friendly notification
       if (shouldShowNotification) {
@@ -140,8 +122,6 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         const isAuthRelated = req.url.includes('/auth/me') || 
                              req.url.includes('/auth/validate') ||
                              req.url.includes('/auth/refresh');
-        
-        console.log('Error interceptor - Auth related:', isAuthRelated, 'URL:', req.url);
         
         if (!isAuthRelated) {
           if (error.status >= 500) {

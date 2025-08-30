@@ -18,12 +18,10 @@ export const noAuthGuard: CanActivateFn = (route, state) => {
     // If we have a real user session (token + user), redirect to notes
     // Guest mode should still allow access to login/register pages
     if (token && user && !isGuestMode) {
-      console.log('NoAuthGuard: Access denied - Valid session found, redirecting to notes');
       router.navigate(['/notes']);
       return of(false);
     }
   }
 
-  console.log('NoAuthGuard: Access granted - No valid session found');
   return of(true);
 };

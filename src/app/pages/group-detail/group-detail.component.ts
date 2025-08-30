@@ -207,7 +207,6 @@ export class GroupDetailComponent implements OnInit, OnDestroy {
           this.loadNotesForGroup(groupId)
         },
         error: (error) => {
-          console.error("Error loading group:", error)
           this.isLoadingGroup = false
           this.router.navigate(["/groups"])
         }
@@ -225,7 +224,6 @@ export class GroupDetailComponent implements OnInit, OnDestroy {
           this.isLoadingNotes = false
         },
         error: (error) => {
-          console.error("Error loading notes for group:", error)
           this.isLoadingNotes = false
         }
       })
@@ -308,7 +306,6 @@ export class GroupDetailComponent implements OnInit, OnDestroy {
           this.loadCounts()
         },
         error: (error) => {
-          console.error("Error creating note:", error)
           this.isLoading = false
         }
       })
@@ -331,7 +328,6 @@ export class GroupDetailComponent implements OnInit, OnDestroy {
           this.isLoading = false;
         },
         error: (error) => {
-          console.error('Error updating group:', error);
           this.isLoading = false;
         }
       });
@@ -365,7 +361,6 @@ export class GroupDetailComponent implements OnInit, OnDestroy {
           this.notesService.getNotes(note.status || 'active').subscribe();
         },
         error: (error) => {
-          console.error("[DEBUG] Error removing note from group:", error)
           this.isLoading = false
         }
       })
@@ -379,9 +374,12 @@ export class GroupDetailComponent implements OnInit, OnDestroy {
         this.notes = this.notes.filter(n => n.id !== note.id)
         // Refresh counts
         this.loadCounts()
+        // Also reload the group's notes to ensure consistency
+        if (this.group) {
+          this.loadNotesForGroup(this.group.id)
+        }
       },
       error: (error) => {
-        console.error("Error archiving note:", error)
       }
     })
   }
@@ -393,9 +391,12 @@ export class GroupDetailComponent implements OnInit, OnDestroy {
         this.notes = this.notes.filter(n => n.id !== note.id)
         // Refresh counts
         this.loadCounts()
+        // Also reload the group's notes to ensure consistency
+        if (this.group) {
+          this.loadNotesForGroup(this.group.id)
+        }
       },
       error: (error) => {
-        console.error("Error trashing note:", error)
       }
     })
   }
@@ -409,7 +410,6 @@ export class GroupDetailComponent implements OnInit, OnDestroy {
         this.loadCounts()
       },
       error: (error) => {
-        console.error("Error restoring note:", error)
       }
     })
   }
@@ -423,7 +423,6 @@ export class GroupDetailComponent implements OnInit, OnDestroy {
         this.loadCounts()
       },
       error: (error) => {
-        console.error("Error deleting note:", error)
       }
     })
   }

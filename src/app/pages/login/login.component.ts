@@ -71,7 +71,6 @@ export class LoginComponent {
           }
         }),
         catchError(error => {
-          console.error("Login error after retries:", error);
           this.isLoadingSubject.next(false);
           
           // Handle specific error cases
@@ -104,18 +103,15 @@ export class LoginComponent {
       )
       .subscribe({
         next: (response) => {
-          console.log('Login successful:', response);
           this.isLoadingSubject.next(false);
           
           // Small delay to ensure state is fully updated before navigation
           setTimeout(() => {
-            console.log('Navigating to /notes after successful login');
             this.router.navigate(['/notes']);
           }, 100);
         },
         error: (error) => {
           // Error is already handled in the catchError operator
-          console.error("Final login error:", error);
         }
       });
   }

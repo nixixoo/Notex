@@ -18,7 +18,6 @@ export const authGuard: CanActivateFn = (route, state) => {
     
     // If we have valid session data, allow access immediately
     if ((token && user) || isGuestMode) {
-      console.log('AuthGuard: Access granted - Session data found in localStorage');
       return of(true);
     }
   }
@@ -28,11 +27,9 @@ export const authGuard: CanActivateFn = (route, state) => {
     map(() => {
       // Allow access if user is logged in OR in guest mode
       if (authService.isLoggedIn() || authService.isGuestMode()) {
-        console.log('AuthGuard: Access granted - User logged in:', authService.isLoggedIn(), 'Guest mode:', authService.isGuestMode());
         return true;
       }
 
-      console.log('AuthGuard: Access denied - Redirecting to login');
       router.navigate(['/login'], { queryParams: { returnUrl: state.url }});
       return false;
     })

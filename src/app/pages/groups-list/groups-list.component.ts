@@ -168,7 +168,6 @@ export class GroupsListComponent implements OnInit {
         this.isLoadingGroups = false;
       },
       error: (error) => {
-        console.error('Error loading groups:', error);
         this.isLoadingGroups = false;
         this.showEmptyMessage = false;
       }
@@ -183,7 +182,6 @@ export class GroupsListComponent implements OnInit {
         this.trashedCount = counts.trashed;
       },
       error: (error) => {
-        console.error('Error loading note counts:', error);
       }
     });
   }
@@ -212,7 +210,6 @@ export class GroupsListComponent implements OnInit {
           this.showEmptyMessage = false;
         },
         error: (error) => {
-          console.error('Error creating group:', error);
           this.isLoading = false;
         }
       });
@@ -245,7 +242,6 @@ export class GroupsListComponent implements OnInit {
             }
           },
           error: (error) => {
-            console.error('Error deleting group:', error);
           }
         });
       }

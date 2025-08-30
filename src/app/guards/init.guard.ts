@@ -16,16 +16,13 @@ export const initGuard: CanActivateFn = (route, state) => {
     const user = localStorage.getItem('user');
     const isGuestMode = localStorage.getItem('guest_mode') === 'true';
     
-    console.log('InitGuard: Checking session data', { hasToken: !!token, hasUser: !!user, isGuestMode });
     
     // If we have valid session data or guest mode, proceed
     if ((token && user) || isGuestMode) {
-      console.log('InitGuard: Valid session found, allowing access');
       return of(true);
     }
     
     // No valid session, redirect to login
-    console.log('InitGuard: No valid session, redirecting to login');
     router.navigate(['/login']);
     return of(false);
   }

@@ -79,7 +79,6 @@ export class GroupsService {
       });
       
     } catch (error) {
-      console.error("Error initializing groups database:", error);
     }
   }
 
@@ -110,7 +109,6 @@ export class GroupsService {
       ).pipe(
         map((result) => this.mapGroups(result)),
         catchError((error) => {
-          console.error("Error fetching groups:", error);
           throw error;
         }),
       );
@@ -155,7 +153,6 @@ export class GroupsService {
         return this.mapGroup(result.rows[0]);
       }),
       catchError((error) => {
-        console.error("Error fetching group:", error);
         throw error;
       }),
     );
@@ -192,7 +189,6 @@ export class GroupsService {
       const currentUser = this.authService.getCurrentUser();
 
       if (!currentUser?.id) {
-        console.error("[GroupsService] No user ID found for authenticated user");
         throw new Error("User not authenticated");
       }
 
@@ -220,14 +216,12 @@ export class GroupsService {
           return newGroup;
         }),
         catchError((error) => {
-          console.error("Error creating group:", error);
           throw error;
         }),
       );
     }
 
     // Error if neither authenticated nor in guest mode
-    console.error("[GroupsService] No valid authentication method");
     throw new Error("Please login or continue as guest");
   }
 
@@ -307,7 +301,6 @@ export class GroupsService {
         return updatedGroup;
       }),
       catchError((error) => {
-        console.error("Error updating group:", error);
         throw error;
       }),
     );
@@ -349,7 +342,6 @@ export class GroupsService {
         this.groupsSubject.next(updatedGroups);
       }),
       catchError((error) => {
-        console.error("Error deleting group:", error);
         throw error;
       }),
     );
@@ -358,7 +350,9 @@ export class GroupsService {
   getNotesInGroup(groupId: string): Observable<Note[]> {
     if (this.authService.isGuestMode()) {
       const notes = localStorage.getItem('guest_notes');
-      const groupNotes = notes ? JSON.parse(notes).filter((note: Note) => note.groupId === groupId) : [];
+      const groupNotes = notes ? JSON.parse(notes).filter((note: Note) => 
+        note.groupId === groupId && note.status === 'active'
+      ) : [];
       return of(groupNotes);
     }
 
@@ -374,7 +368,6 @@ export class GroupsService {
       ).pipe(
         map((result) => this.mapNotes(result)),
         catchError((error) => {
-          console.error("Error fetching notes in group:", error);
           throw error;
         }),
       );
@@ -401,7 +394,6 @@ export class GroupsService {
       ).pipe(
         map((result) => Number(result.rows[0]['count'])),
         catchError((error) => {
-          console.error("Error getting group count:", error);
           return of(0);
         }),
       );

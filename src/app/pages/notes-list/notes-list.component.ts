@@ -221,7 +221,7 @@ export class NotesListComponent implements OnInit {
 
   loadNotes(showLoading: boolean = true): void {
     if (showLoading) this.isLoadingNotes = true;
-  
+    
     this.notesService.getNotes(this.currentStatus).subscribe({
       next: (notes) => {
         this.notes = notes;
@@ -235,7 +235,6 @@ export class NotesListComponent implements OnInit {
         }
       },
       error: (error) => {
-        console.error("Error loading notes:", error);
         this.isLoadingNotes = false;
         this.showEmptyMessage = false;
       },
@@ -256,7 +255,6 @@ export class NotesListComponent implements OnInit {
         this.groupCount = groups.length;
       },
       error: (error) => {
-        console.error('Error loading group count:', error);
       }
     });
   }
@@ -294,7 +292,6 @@ export class NotesListComponent implements OnInit {
         this.showNewNoteForm = false
       },
       error: (error) => {
-        console.error("Error creating note:", error)
         this.isLoading = false
       }
     })
@@ -307,7 +304,6 @@ export class NotesListComponent implements OnInit {
       this.loadNoteCounts();
       },
       error: (error) => {
-        console.error("Error archiving note:", error)
       },
     })
   }
@@ -319,7 +315,6 @@ export class NotesListComponent implements OnInit {
         this.loadNoteCounts() // Add this line
       },
       error: (error) => {
-        console.error("Error trashing note:", error)
       },
     })
   }
@@ -331,7 +326,6 @@ export class NotesListComponent implements OnInit {
       this.loadNoteCounts() // Add this line
       },
       error: (error) => {
-        console.error("Error restoring note:", error)
       },
     })
   }
@@ -359,7 +353,6 @@ export class NotesListComponent implements OnInit {
             this.loadNoteCounts()
           },
           error: (error) => {
-            console.error("Error deleting note:", error)
           }
         });
       }

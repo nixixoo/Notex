@@ -50,7 +50,6 @@ export class AsyncMemoPipe implements PipeTransform, OnDestroy {
     const subscription = source$.pipe(
       distinctUntilChanged(),
       catchError(error => {
-        console.error('AsyncMemoPipe error:', error);
         return of(null);
       })
     ).subscribe({
@@ -59,7 +58,6 @@ export class AsyncMemoPipe implements PipeTransform, OnDestroy {
         this.cdr.markForCheck();
       },
       error: (error) => {
-        console.error('AsyncMemoPipe subscription error:', error);
         subject.next(null);
       }
     });

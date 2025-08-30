@@ -149,7 +149,6 @@ export class NoteEditorComponent implements OnInit {
         }
       }
     } catch (error) {
-      console.error('Error loading note:', error)
     } finally {
       this.isLoading = false
     }
@@ -179,7 +178,6 @@ export class NoteEditorComponent implements OnInit {
         this.location.back()
       }
     } catch (error) {
-      console.error('Error saving note:', error)
     } finally {
       this.isSaving = false
     }

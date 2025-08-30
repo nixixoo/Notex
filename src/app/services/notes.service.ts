@@ -24,10 +24,7 @@ export class NotesService {
       if (user) {
         this.loadNotes('active');
       } else if (this.authService.isGuestMode()) {
-        this.notesSubject.next(this.getLocalNotes().filter(note => 
-          (note.status === 'active' || !note.status) && 
-          (!note.groupId)
-        ));
+        this.loadNotes('active');
       } else {
         this.notesSubject.next([]);
       }
@@ -36,10 +33,7 @@ export class NotesService {
     // Also subscribe to guest mode changes
     this.authService.guestMode$.subscribe(isGuestMode => {
       if (isGuestMode) {
-        this.notesSubject.next(this.getLocalNotes().filter(note => 
-          (note.status === 'active' || !note.status) && 
-          (!note.groupId)
-        ));
+        this.loadNotes('active');
       }
     });
   }
@@ -55,11 +49,17 @@ export class NotesService {
 
   getNotes(status: "active" | "archived" | "trashed" = "active"): Observable<Note[]> {
     if (this.authService.isGuestMode()) {
-      // For guest mode, filter notes from local storage
-      const notes = this.getLocalNotes().filter(note => 
-        (note.status === status || !note.status && status === 'active') && 
-        (!note.groupId)
-      );
+      // For guest mode, ALWAYS read from localStorage and filter by status
+      const notes = this.getLocalNotes().filter(note => {
+        const noteStatus = note.status || 'active';
+        if (status === 'active') {
+          // For active notes, only show those without groupId (not in groups)
+          return noteStatus === 'active' && !note.groupId;
+        } else {
+          // For archived/trashed notes, show ALL notes with that status, regardless of groupId
+          return noteStatus === status;
+        }
+      });
       return of(notes);
     } else if (this.authService.isLoggedIn()) {
       // For authenticated users, get notes from API
@@ -70,7 +70,6 @@ export class NotesService {
           }
         }),
         catchError(error => {
-          console.error('Error fetching notes:', error);
           return of([]);
         })
       );
@@ -83,8 +82,8 @@ export class NotesService {
       // For guest mode, count notes from local storage
       const notes = this.getLocalNotes();
       const active = notes.filter(n => (!n.status || n.status === 'active') && !n.groupId).length;
-      const archived = notes.filter(n => n.status === 'archived').length;
-      const trashed = notes.filter(n => n.status === 'trashed').length;
+      const archived = notes.filter(n => n.status === 'archived').length; // Include all archived notes
+      const trashed = notes.filter(n => n.status === 'trashed').length; // Include all trashed notes
       return of({ active, archived, trashed });
     } else if (this.authService.isLoggedIn()) {
       // For authenticated users, get counts from API
@@ -103,7 +102,6 @@ export class NotesService {
       // For authenticated users, get note from API
       return this.apiService.get<Note>(`notes/${id}`).pipe(
         catchError(error => {
-          console.error('Error fetching note:', error);
           return of(null);
         })
       );
@@ -151,12 +149,10 @@ export class NotesService {
       return this.apiService.post<Note>('notes', noteData).pipe(
         tap(() => this.loadNotes('active')),
         catchError(error => {
-          console.error('Error creating note:', error);
           throw error;
         })
       );
     } else {
-      console.error('Failed to create note: User is neither in guest mode nor logged in');
       return throwError(() => new Error('User must be logged in or in guest mode to create notes'));
     }
   }
@@ -180,7 +176,6 @@ export class NotesService {
       return this.apiService.put<Note>(`notes/${id}`, updateData).pipe(
         tap(() => this.loadNotes('active')),
         catchError(error => {
-          console.error('Error updating note:', error);
           return of(null);
         })
       );
@@ -205,7 +200,6 @@ export class NotesService {
         map(() => true),
         tap(() => this.loadNotes('active')),
         catchError(error => {
-          console.error('Error deleting note:', error);
           return of(false);
         })
       );
@@ -240,16 +234,21 @@ export class NotesService {
 
   private loadNotes(status: "active" | "archived" | "trashed" = "active"): void {
     if (this.authService.isGuestMode()) {
-      const notes = this.getLocalNotes().filter(note => 
-        (note.status === status || !note.status && status === 'active') && 
-        (!note.groupId)
-      );
+      const notes = this.getLocalNotes().filter(note => {
+        const noteStatus = note.status || 'active';
+        if (status === 'active') {
+          // For active notes, only show those without groupId
+          return noteStatus === 'active' && !note.groupId;
+        } else {
+          // For archived/trashed notes, show ALL notes regardless of groupId
+          return noteStatus === status;
+        }
+      });
       this.notesSubject.next(notes);
     } else if (this.authService.isLoggedIn()) {
       this.apiService.get<Note[]>(`notes?status=${status}`).subscribe({
         next: (notes) => this.notesSubject.next(notes),
         error: (error) => {
-          console.error('Error loading notes:', error);
           this.notesSubject.next([]);
         }
       });

@@ -79,7 +79,6 @@ export class ChatComponent implements OnInit, OnDestroy {
           this.isLoading = false;
         },
         error: (error) => {
-          console.error('Error sending message:', error);
           this.chatService.addMessage('Sorry, I encountered an error. Please try again later.', false);
           this.loadMessages();
           this.isLoading = false;

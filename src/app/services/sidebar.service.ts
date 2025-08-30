@@ -45,7 +45,6 @@ export class SidebarService {
         this.trashedCountSubject.next(counts.trashed);
       },
       error: (error) => {
-        console.error('Error loading note counts:', error);
       }
     });
 
@@ -55,7 +54,6 @@ export class SidebarService {
         this.groupCountSubject.next(groups.length);
       },
       error: (error) => {
-        console.error('Error loading group count:', error);
       }
     });
   }

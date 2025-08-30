@@ -58,7 +58,6 @@ export class AuthService {
       return;
     }
     
-    console.log('Initializing auth state...');
     
     // Check for guest mode
     const isGuestMode = localStorage.getItem(this.GUEST_KEY) === 'true';
@@ -68,12 +67,10 @@ export class AuthService {
     const token = localStorage.getItem(this.TOKEN_KEY);
     const user = this.getUserFromStorage();
     
-    console.log('Auth initialization - Token exists:', !!token, 'User exists:', !!user);
     
     if (token && user) {
       // Set the user from storage immediately to prevent flickering
       this.userSubject.next(user);
-      console.log('User loaded from storage:', user.username);
       
       // Complete initialization immediately for better UX
       // The token will be validated silently in the background
@@ -84,15 +81,12 @@ export class AuthService {
       // If validation fails due to network issues, user stays logged in
       this.validateToken().subscribe({
         next: (isValid) => {
-          console.log('Background token validation result:', isValid);
         },
         error: (error) => {
-          console.warn('Background token validation error, but keeping user logged in:', error);
         }
       });
     } else if (token && !user) {
       // If we have a token but no user data, try to get user info
-      console.log('Found token but no user data, fetching user info...');
       this.validateToken().subscribe({
         next: () => {
           this.initializationComplete = true;
@@ -105,7 +99,6 @@ export class AuthService {
       });
     } else {
       // No token and no user - initialization complete
-      console.log('No token found, initialization complete');
       this.initializationComplete = true;
       this.initializationSubject.next(true);
     }
@@ -135,14 +128,12 @@ export class AuthService {
         // Only clear auth data if we get a clear authentication error (401/403)
         // Don't clear on network errors, server errors, etc.
         if (error.status === 401 || error.status === 403) {
-          console.log('Token validation: Authentication expired, clearing session');
           this.clearAuthData();
           return of(false);
         }
         
         // For other errors (network, server issues), keep the user logged in
         // They can still use the app and try again later
-        console.log('Token validation: Network/server error, keeping session active');
         return of(true); // Return true to keep user logged in
       })
     );
@@ -151,30 +142,21 @@ export class AuthService {
   login(credentials: LoginRequest): Observable<AuthResponse> {
     return this.apiService.post<any>('auth/login', credentials).pipe(
       tap(apiResponse => {
-        console.log('Raw login API response:', apiResponse);
         
         // Handle wrapped API response format {success: true, data: {...}}
         const response = apiResponse.data || apiResponse;
         
-        console.log('Processed login response:', response);
         
         if (response.token && response.user) {
-          console.log('Saving login data:', {
-            token: !!response.token,
-            user: response.user
-          });
           
           localStorage.setItem(this.TOKEN_KEY, response.token);
           localStorage.setItem(this.USER_KEY, JSON.stringify(response.user));
           this.userSubject.next(response.user);
           
-          console.log('After login - User set:', this.userSubject.value);
-          console.log('After login - Token in storage:', !!localStorage.getItem(this.TOKEN_KEY));
           
           // Disable guest mode when logging in
           this.setGuestMode(false);
         } else {
-          console.error('Invalid login response format:', response);
         }
       }),
       map(apiResponse => apiResponse.data || apiResponse)
@@ -184,7 +166,6 @@ export class AuthService {
   register(userData: RegisterRequest): Observable<AuthResponse> {
     return this.apiService.post<any>('auth/register', userData).pipe(
       tap(apiResponse => {
-        console.log('Raw register API response:', apiResponse);
         
         // Handle wrapped API response format {success: true, data: {...}}
         const response = apiResponse.data || apiResponse;
@@ -221,11 +202,6 @@ export class AuthService {
     const token = this.isBrowser ? localStorage.getItem(this.TOKEN_KEY) : null;
     const result = !!(memoryUser && token);
     
-    console.log('isLoggedIn check:', {
-      hasMemoryUser: !!memoryUser,
-      hasToken: !!token,
-      result: result
-    });
     
     return result;
   }

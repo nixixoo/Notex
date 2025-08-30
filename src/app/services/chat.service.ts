@@ -78,7 +78,6 @@ export class ChatService {
     this.apiService.get<ChatHistoryResponse>('chat/history')
       .pipe(
         catchError(error => {
-          console.error('Error loading chat messages from API:', error);
           // Fall back to localStorage if API fails
           this.loadMessagesFromStorage();
           return of(null);
@@ -105,9 +104,7 @@ export class ChatService {
               noteId: msg.noteId
             });
           });
-          console.log('Loaded messages from API:', Object.keys(this.messagesByNoteId).length, 'notes with messages');
         } else {
-          console.warn('API response missing data.messages array:', response);
         }
         
         this.messagesLoaded = true;
@@ -139,7 +136,6 @@ export class ChatService {
           }));
         }
       } catch (error) {
-        console.error('Error loading chat messages from storage:', error);
       }
     }
   }
@@ -153,7 +149,6 @@ export class ChatService {
           defaultMessages: this.defaultMessages
         }));
       } catch (error) {
-        console.error('Error saving chat messages to storage:', error);
       }
     }
   }
@@ -304,7 +299,6 @@ export class ChatService {
         noteId: message.noteId
       }).pipe(
         catchError(error => {
-          console.error('Error saving chat message to API:', error);
           return throwError(() => error);
         })
       ).subscribe();
@@ -328,7 +322,6 @@ export class ChatService {
         noteId: noteId
       }).pipe(
         catchError(error => {
-          console.error('Error clearing chat history from API:', error);
           return throwError(() => error);
         })
       ).subscribe();

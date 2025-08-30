@@ -103,7 +103,6 @@ export class SecurityUtil {
         const sanitizedValue = SecurityUtil.sanitizeInput(value);
         localStorage.setItem(sanitizedKey, sanitizedValue);
       } catch (error) {
-        console.error('Error storing data in localStorage:', error);
       }
     },
 
@@ -113,7 +112,6 @@ export class SecurityUtil {
         const value = localStorage.getItem(sanitizedKey);
         return value ? SecurityUtil.sanitizeInput(value) : null;
       } catch (error) {
-        console.error('Error reading data from localStorage:', error);
         return null;
       }
     },
@@ -123,7 +121,6 @@ export class SecurityUtil {
         const sanitizedKey = SecurityUtil.sanitizeInput(key);
         localStorage.removeItem(sanitizedKey);
       } catch (error) {
-        console.error('Error removing data from localStorage:', error);
       }
     }
   };

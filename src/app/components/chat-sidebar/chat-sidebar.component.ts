@@ -162,7 +162,6 @@ export class ChatSidebarComponent implements OnInit, OnChanges, OnDestroy, After
   ngOnInit(): void {
     // Subscribe to the message loading state
     this.loadingSubscription = this.chatService.messagesLoading$.subscribe(loading => {
-      console.log('Messages loading state changed:', loading);
       this.messagesLoading = loading;
       if (!loading) {
         // Load messages when loading completes
@@ -205,7 +204,6 @@ export class ChatSidebarComponent implements OnInit, OnChanges, OnDestroy, After
         element.scrollTop = element.scrollHeight;
       }
     } catch (err) {
-      console.error('Error scrolling to bottom:', err);
     }
   }
   
@@ -232,7 +230,6 @@ export class ChatSidebarComponent implements OnInit, OnChanges, OnDestroy, After
   private loadMessages(): void {
     // Load messages specific to this note
     const newMessages = this.chatService.getMessages(this.noteId);
-    console.log(`Loading messages for noteId ${this.noteId}:`, newMessages.length, 'messages');
     
     this.messages = newMessages;
     
@@ -337,7 +334,6 @@ My question: ${userMessage}`;
         this.isLoading = false;
       },
       error: (error) => {
-        console.error('Error sending message:', error);
         this.isLoading = false;
         
         // Show error message to user

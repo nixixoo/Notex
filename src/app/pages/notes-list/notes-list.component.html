@@ -9,7 +9,7 @@
   <div class="main-content">
     <div *ngIf="(isGuestMode$ | async) && currentStatus === 'active'" class="guest-banner">
       <span>You're using guest mode. Notes will be saved locally.</span>
-      <button class="guest-btn">
+      <button class="guest-btn" (click)="convertToPermanentAccount()">
         Create Permanent Account
       </button>
     </div>
