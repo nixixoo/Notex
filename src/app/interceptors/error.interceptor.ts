@@ -3,11 +3,9 @@ import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, retry, throwError, timer } from 'rxjs';
 import { NotificationService } from '../services/notification.service';
-import { LoadingService } from '../services/loading.service';
 
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   const notificationService = inject(NotificationService);
-  const loadingService = inject(LoadingService);
   const router = inject(Router);
 
   return next(req).pipe(
@@ -33,9 +31,6 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
     }),
     
     catchError((error: HttpErrorResponse) => {
-      // Hide loading indicator on error
-      loadingService.hide();
-
       let errorMessage = 'An unexpected error occurred';
       let shouldShowNotification = true;
 
