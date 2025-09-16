@@ -39,6 +39,7 @@ yarn-error.log
 testem.log
 /typings
 claude.md
+.Cosas
 
 # System files
 .DS_Store
